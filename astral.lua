@@ -70,6 +70,8 @@ getgenv().library = {
 
 local flags = library.flags
 local config_flags = library.config_flags
+-- ESP Name/Tool/Distance: only these callbacks write here so Tool/Distance stay on when Name is off (library may sync flags elsewhere)
+local espLabelOn = { name = false, tool = false, distance = false }
 
 local themes = {
 	preset = {
@@ -4609,6 +4611,9 @@ do
 	local visTab = window:tab({ name = "Visuals" })
 	local espSec = visTab:section({ name = "ESP (Don't use for now)", side = "right" })
 	local esp = Config.Visuals.ESP
+	espLabelOn.name = esp.Name == true
+	espLabelOn.tool = esp.Tool == true
+	espLabelOn.distance = esp.Distance == true
 	espSec:toggle({ name = "Enabled", flag = "esp_enabled", default = esp.Enabled, callback = function(v) esp.Enabled = v end })
 	espSec:toggle({ name = "Box", flag = "esp_box", default = esp.Box ~= false, callback = function(v) esp.Box = v end })
 	espSec:slider({ name = "Render Distance", flag = "esp_render_distance", min = 0, max = 50000, default = esp.RenderDistance or 0, callback = function(v) esp.RenderDistance = v end })
@@ -4623,10 +4628,10 @@ do
 	espSec:colorpicker({ name = "Gradient Color 1", flag = "esp_gradient_c1", color = esp.GradientColor1 or Color3.new(1,0.2,0.5), callback = function(c) esp.GradientColor1 = c end })
 	espSec:colorpicker({ name = "Gradient Color 2", flag = "esp_gradient_c2", color = esp.GradientColor2 or Color3.new(0.2,0.5,1), callback = function(c) esp.GradientColor2 = c end })
 	espSec:slider({ name = "Gradient Speed", flag = "esp_gradient_speed", min = 0.1, max = 3, interval = 0.1, default = esp.GradientSpeed or 1, callback = function(v) esp.GradientSpeed = v end })
-	espSec:toggle({ name = "Name", flag = "esp_name", default = esp.Name, callback = function(v) esp.Name = v end })
+	espSec:toggle({ name = "Name", flag = "esp_name", default = esp.Name, callback = function(v) esp.Name = v; espLabelOn.name = v end })
 	espSec:dropdown({ name = "Name Type", flag = "esp_nametype", items = {"Display Name", "Username"}, default = (esp.NameType or (esp.ShowUsername and "Username" or "Display Name")), callback = function(v) esp.NameType = v end })
-	espSec:toggle({ name = "Tool", flag = "esp_tool", default = esp.Tool, callback = function(v) esp.Tool = v end })
-	espSec:toggle({ name = "Distance", flag = "esp_distance", default = esp.Distance, callback = function(v) esp.Distance = v end })
+	espSec:toggle({ name = "Tool", flag = "esp_tool", default = esp.Tool, callback = function(v) esp.Tool = v; espLabelOn.tool = v end })
+	espSec:toggle({ name = "Distance", flag = "esp_distance", default = esp.Distance, callback = function(v) esp.Distance = v; espLabelOn.distance = v end })
 	espSec:dropdown({ name = "Distance Type", flag = "esp_distancetype", items = {"Studs", "Meters"}, default = esp.DistanceType or "Studs", callback = function(v) esp.DistanceType = v end })
 	espSec:dropdown({ name = "Font", flag = "esp_font", items = {"UI", "System", "Plex", "Monospace"}, default = esp.Font or "UI", callback = function(v) esp.Font = v end })
 	espSec:toggle({ name = "Text Outline", flag = "esp_text_outline", default = esp.TextOutline ~= false, callback = function(v) esp.TextOutline = v end })
@@ -7266,9 +7271,10 @@ track(RunService.RenderStepped, function()
     local outlineColor = esp.OutlineColor or boxColor
     local doOutline = esp.BoxOutline ~= false
     local fillTrans = esp.BoxFillTransparency or 0.85
-    local doName = esp.Name and (esp.NameType == "Display Name" or esp.NameType == "Username")
-    local doTool = esp.Tool
-    local doDistance = esp.Distance
+    -- Name, Tool, Distance: read only from espLabelOn (set solely by each toggle callback) so Tool/Distance never depend on Name
+    local doName = espLabelOn.name and (esp.NameType == "Display Name" or esp.NameType == "Username")
+    local doTool = espLabelOn.tool
+    local doDistance = espLabelOn.distance
     local needText = doName or doTool or doDistance
     local fontName = esp.Font or "UI"
     local fontId = espFontMap[fontName] or 0
@@ -7354,8 +7360,9 @@ track(RunService.RenderStepped, function()
             minSy = max(minSy, margin)
             maxSy = min(maxSy, vh - margin)
             local doFillThisPlayer = doFill and (drawIndex <= 6)
-            local needTextThisPlayer = needText and (doName or (doTool and drawIndex <= 10) or (doDistance and drawIndex <= 10))
-            c = ensureEspDrawings(plr, boxType, doFillThisPlayer, needTextThisPlayer, esp.HealthBar, esp.ArmorBar)
+            -- Show/update text for every drawn player when any of name/tool/distance is enabled (no cap so no player "breaks")
+            local needTextThisPlayer = needText
+            c = ensureEspDrawings(plr, boxType, doFillThisPlayer, needText, esp.HealthBar, esp.ArmorBar)
             if c then c.espLastBoxOk = true end
             local screenRoot = camera:WorldToViewportPoint(rootPos)
             if not c.espKnockedFade then c.espKnockedFade = 1 end
@@ -7368,67 +7375,77 @@ track(RunService.RenderStepped, function()
             else
                 c.espKnockedFade = 1
             end
-            if needTextThisPlayer and (c.nameText or c.toolText or c.distanceText) then
-                local textColor = boxColor
-                local topY = minSy
-                local bottomY = maxSy
-                local textOutline = esp.TextOutline ~= false
-                local nameType = esp.NameType or "Display Name"
-                local nameLine = nil
-                if doName then
-                    if nameType == "Display Name" and plr.DisplayName and plr.DisplayName ~= "" then
-                        nameLine = plr.DisplayName
-                    elseif nameType == "Username" then
-                        nameLine = "@" .. (plr.Name or "")
+            -- Use 2D box center for text so name/tool/distance align with the actual box (not 3D root projection)
+            local boxCenterX = (minSx + maxSx) * 0.5
+            local topY = minSy
+            local bottomY = maxSy
+            -- Update text in its own pcall so a Drawing error never skips drawing the box.
+            -- Run whenever any label is enabled (do not require name to be on for tool/distance to show).
+            pcall(function()
+                if needTextThisPlayer then
+                    local textColor = boxColor
+                    local textOutline = esp.TextOutline ~= false
+                    local nameType = esp.NameType or "Display Name"
+                    local nameLine = nil
+                    if doName then
+                        if nameType == "Display Name" and plr.DisplayName and plr.DisplayName ~= "" then
+                            nameLine = plr.DisplayName
+                        elseif nameType == "Username" then
+                            nameLine = "@" .. (plr.Name or "")
+                        end
                     end
-                end
-                if c.nameText then
-                    c.nameText.Font = fontId
-                    c.nameText.Color = textColor
-                    c.nameText.Outline = textOutline
-                    c.nameText.OutlineColor = Color3.new(0,0,0)
-                    c.nameText.Text = (nameLine and nameLine ~= "") and ("[" .. nameLine .. "]") or ""
-                    c.nameText.Visible = (nameLine and nameLine ~= "")
-                    c.nameText.Position = Vector2.new(screenRoot.X, topY - (c.nameText.Size * 1.5))
-                end
-                -- Tool and distance on BOTTOM of box
-                local bottomOffset = 2
-                if c.toolText then
-                    if doTool and drawIndex <= 10 then
-                        local toolName = "None"
-                        local tool = char:FindFirstChildOfClass("Tool")
-                        if not tool and plr:FindFirstChild("Backpack") then tool = plr.Backpack:FindFirstChildOfClass("Tool") end
-                        if tool then toolName = (tool.Name and tool.Name:gsub("^%[*(.-)%]*$", "%1")) or tool.Name end
-                        c.toolText.Font = fontId
-                        c.toolText.Color = textColor
-                        c.toolText.Outline = textOutline
-                        c.toolText.OutlineColor = Color3.new(0,0,0)
-                        c.toolText.Text = "[" .. toolName .. "]"
-                        c.toolText.Visible = true
-                        c.toolText.Position = Vector2.new(screenRoot.X, bottomY + bottomOffset)
-                        bottomOffset = bottomOffset + (c.toolText.Size or 12) + 2
-                    else
-                        c.toolText.Visible = false
+                    if c.nameText then
+                        c.nameText.Font = fontId
+                        c.nameText.Color = textColor
+                        c.nameText.Outline = textOutline
+                        c.nameText.OutlineColor = Color3.new(0,0,0)
+                        c.nameText.Text = (nameLine and nameLine ~= "") and ("[" .. nameLine .. "]") or ""
+                        c.nameText.Visible = (nameLine and nameLine ~= "")
+                        c.nameText.Position = Vector2.new(boxCenterX, topY - ((c.nameText.Size or 14) * 1.5))
                     end
-                end
-                if c.distanceText then
-                    if doDistance and drawIndex <= 10 then
-                        local distStuds = (rootPos - camera.CFrame.Position).Magnitude
-                        local distM = math.floor(distStuds * 0.3048 * 10) / 10
-                        local distType = esp.DistanceType or "Studs"
-                        c.distanceText.Font = fontId
-                        c.distanceText.Color = textColor
-                        c.distanceText.Outline = textOutline
-                        c.distanceText.OutlineColor = Color3.new(0,0,0)
-                        c.distanceText.Text = (distType == "Meters") and string.format("[%.1f m]", distM) or string.format("[%.0f studs]", distStuds)
-                        c.distanceText.Visible = true
-                        c.distanceText.Position = Vector2.new(screenRoot.X, bottomY + bottomOffset)
-                    else
-                        c.distanceText.Visible = false
+                    local bottomOffset = 2
+                    if c.toolText then
+                        if doTool then
+                            local toolName = "None"
+                            local tool = char:FindFirstChildOfClass("Tool")
+                            if not tool and plr:FindFirstChild("Backpack") then tool = plr.Backpack:FindFirstChildOfClass("Tool") end
+                            if tool then toolName = (tool.Name and tool.Name:gsub("^%[*(.-)%]*$", "%1")) or tool.Name end
+                            c.toolText.Font = fontId
+                            c.toolText.Color = textColor
+                            c.toolText.Outline = textOutline
+                            c.toolText.OutlineColor = Color3.new(0,0,0)
+                            c.toolText.Text = "[" .. toolName .. "]"
+                            c.toolText.Visible = true
+                            c.toolText.Position = Vector2.new(boxCenterX, bottomY + bottomOffset)
+                            bottomOffset = bottomOffset + (c.toolText.Size or 12) + 2
+                        else
+                            c.toolText.Visible = false
+                        end
                     end
+                    if c.distanceText then
+                        if doDistance then
+                            local distStuds = (rootPos - camera.CFrame.Position).Magnitude
+                            local distM = math.floor(distStuds * 0.3048 * 10) / 10
+                            local distType = esp.DistanceType or "Studs"
+                            c.distanceText.Font = fontId
+                            c.distanceText.Color = textColor
+                            c.distanceText.Outline = textOutline
+                            c.distanceText.OutlineColor = Color3.new(0,0,0)
+                            c.distanceText.Text = (distType == "Meters") and string.format("[%.1f m]", distM) or string.format("[%.0f studs]", distStuds)
+                            c.distanceText.Visible = true
+                            c.distanceText.Position = Vector2.new(boxCenterX, bottomY + bottomOffset)
+                        else
+                            c.distanceText.Visible = false
+                        end
+                    end
+                else
+                    if c.nameText then c.nameText.Visible = false end
+                    if c.toolText then c.toolText.Visible = false end
+                    if c.distanceText then c.distanceText.Visible = false end
                 end
-            end
+            end)
             if do2D then
+                if c.gradientFrame then c.gradientFrame.Visible = false end
                 local tl, tr, br, bl = Vector2.new(minSx, minSy), Vector2.new(maxSx, minSy), Vector2.new(maxSx, maxSy), Vector2.new(minSx, maxSy)
                 local expand = math.max(1, math.ceil(outlineThick)) + 1
                 local fsx, fsy = minSx - expand, minSy - expand
@@ -7527,7 +7544,7 @@ track(RunService.RenderStepped, function()
                 if c.gradientFrame then c.gradientFrame.Visible = false end
                 for _, q in c.fillQuads or {} do q.Visible = false end
             end
-            if esp.HealthBar and c.healthBarBg and c.healthBarFill then
+            if do2D and esp.HealthBar and c.healthBarBg and c.healthBarFill then
                 local expand = math.max(1, math.ceil(outlineThick)) + 1
                 local humanoid = char:FindFirstChild("Humanoid") or char:FindFirstChildOfClass("Humanoid")
                 local health = (humanoid and math.max(0, humanoid.Health or 0)) or 0
@@ -7565,9 +7582,10 @@ track(RunService.RenderStepped, function()
                     end
                     return Color3.new(r, g, b)
                 end
-                local numGradSegs = (drawIndex <= 4) and 16 or (drawIndex <= 8) and 12 or 8
                 local hBarOutlineThick = math.max(0.5, esp.HealthBarOutlineThickness or 0.5)
                 local hBarOutlineColor = esp.HealthBarOutlineColor or outlineColor
+                -- Gradient = single quad with color at current ratio (no segment lines)
+                local fillColor = (fillStyle == "Gradient") and healthBarGradColor(displayRatio) or hColor
                 if pos == "Left" then
                     barW = 2
                     barH = maxSy - minSy
@@ -7598,40 +7616,19 @@ track(RunService.RenderStepped, function()
                     else
                         for i = 1, 4 do if c.healthBarOutline then c.healthBarOutline[i].Visible = false end end
                     end
-                    local gradArr = (fillStyle == "Gradient") and ensureQuadArray(c, "healthBarFillGrad", numGradSegs) or nil
-                    if fillH >= 0.01 and fillStyle == "Gradient" and gradArr and numGradSegs >= 1 and fillH >= 0.5 then
-                        c.healthBarFill.Visible = false
-                        local segH = fillH / numGradSegs
-                        for i = 1, numGradSegs do
-                            local sy = fy + (i - 1) * segH
-                            local t = 1 - (i - 0.5) / numGradSegs
-                            local q = gradArr[i]
-                            q.PointA = Vector2.new(bx, sy)
-                            q.PointB = Vector2.new(bx + barW, sy)
-                            q.PointC = Vector2.new(bx + barW, sy + segH)
-                            q.PointD = Vector2.new(bx, sy + segH)
-                            q.Color = healthBarGradColor(t)
-                            q.Transparency = 1
-                            q.Filled = true
-                            q.Thickness = 0
-                            q.Visible = true
-                        end
-                        for i = numGradSegs + 1, #gradArr do gradArr[i].Visible = false end
+                    for _, q in c.healthBarFillGrad or {} do q.Visible = false end
+                    if fillH >= 0.01 then
+                        c.healthBarFill.PointA = Vector2.new(bx, fy)
+                        c.healthBarFill.PointB = Vector2.new(bx + barW, fy)
+                        c.healthBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
+                        c.healthBarFill.PointD = Vector2.new(bx, fy + fillH)
+                        c.healthBarFill.Color = fillColor
+                        c.healthBarFill.Transparency = 1
+                        c.healthBarFill.Filled = true
+                        c.healthBarFill.Thickness = 0
+                        c.healthBarFill.Visible = true
                     else
-                        for _, q in c.healthBarFillGrad or {} do q.Visible = false end
-                        if fillH >= 0.01 then
-                            c.healthBarFill.PointA = Vector2.new(bx, fy)
-                            c.healthBarFill.PointB = Vector2.new(bx + barW, fy)
-                            c.healthBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
-                            c.healthBarFill.PointD = Vector2.new(bx, fy + fillH)
-                            c.healthBarFill.Color = hColor
-                            c.healthBarFill.Transparency = 1
-                            c.healthBarFill.Filled = true
-                            c.healthBarFill.Thickness = 0
-                            c.healthBarFill.Visible = true
-                        else
-                            c.healthBarFill.Visible = false
-                        end
+                        c.healthBarFill.Visible = false
                     end
                 elseif pos == "Right" then
                     barW = 2
@@ -7663,40 +7660,19 @@ track(RunService.RenderStepped, function()
                     else
                         for i = 1, 4 do if c.healthBarOutline then c.healthBarOutline[i].Visible = false end end
                     end
-                    local gradArr = (fillStyle == "Gradient") and ensureQuadArray(c, "healthBarFillGrad", numGradSegs) or nil
-                    if fillH >= 0.01 and fillStyle == "Gradient" and gradArr and numGradSegs >= 1 and fillH >= 0.5 then
-                        c.healthBarFill.Visible = false
-                        local segH = fillH / numGradSegs
-                        for i = 1, numGradSegs do
-                            local sy = fy + (i - 1) * segH
-                            local t = 1 - (i - 0.5) / numGradSegs
-                            local q = gradArr[i]
-                            q.PointA = Vector2.new(bx, sy)
-                            q.PointB = Vector2.new(bx + barW, sy)
-                            q.PointC = Vector2.new(bx + barW, sy + segH)
-                            q.PointD = Vector2.new(bx, sy + segH)
-                            q.Color = healthBarGradColor(t)
-                            q.Transparency = 1
-                            q.Filled = true
-                            q.Thickness = 0
-                            q.Visible = true
-                        end
-                        for i = numGradSegs + 1, #gradArr do gradArr[i].Visible = false end
+                    for _, q in c.healthBarFillGrad or {} do q.Visible = false end
+                    if fillH >= 0.01 then
+                        c.healthBarFill.PointA = Vector2.new(bx, fy)
+                        c.healthBarFill.PointB = Vector2.new(bx + barW, fy)
+                        c.healthBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
+                        c.healthBarFill.PointD = Vector2.new(bx, fy + fillH)
+                        c.healthBarFill.Color = fillColor
+                        c.healthBarFill.Transparency = 1
+                        c.healthBarFill.Filled = true
+                        c.healthBarFill.Thickness = 0
+                        c.healthBarFill.Visible = true
                     else
-                        for _, q in c.healthBarFillGrad or {} do q.Visible = false end
-                        if fillH >= 0.01 then
-                            c.healthBarFill.PointA = Vector2.new(bx, fy)
-                            c.healthBarFill.PointB = Vector2.new(bx + barW, fy)
-                            c.healthBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
-                            c.healthBarFill.PointD = Vector2.new(bx, fy + fillH)
-                            c.healthBarFill.Color = hColor
-                            c.healthBarFill.Transparency = 1
-                            c.healthBarFill.Filled = true
-                            c.healthBarFill.Thickness = 0
-                            c.healthBarFill.Visible = true
-                        else
-                            c.healthBarFill.Visible = false
-                        end
+                        c.healthBarFill.Visible = false
                     end
                 else
                     barW = maxSx - minSx
@@ -7727,40 +7703,19 @@ track(RunService.RenderStepped, function()
                     else
                         for i = 1, 4 do if c.healthBarOutline then c.healthBarOutline[i].Visible = false end end
                     end
-                    local gradArr = (fillStyle == "Gradient") and ensureQuadArray(c, "healthBarFillGrad", numGradSegs) or nil
-                    if fillW >= 0.01 and fillStyle == "Gradient" and gradArr and numGradSegs >= 1 and fillW >= 0.5 then
-                        c.healthBarFill.Visible = false
-                        local segW = fillW / numGradSegs
-                        for i = 1, numGradSegs do
-                            local sx = bx + (i - 1) * segW
-                            local t = 1 - (i - 0.5) / numGradSegs
-                            local q = gradArr[i]
-                            q.PointA = Vector2.new(sx, by)
-                            q.PointB = Vector2.new(sx + segW, by)
-                            q.PointC = Vector2.new(sx + segW, by + barH)
-                            q.PointD = Vector2.new(sx, by + barH)
-                            q.Color = healthBarGradColor(t)
-                            q.Transparency = 1
-                            q.Filled = true
-                            q.Thickness = 0
-                            q.Visible = true
-                        end
-                        for i = numGradSegs + 1, #gradArr do gradArr[i].Visible = false end
+                    for _, q in c.healthBarFillGrad or {} do q.Visible = false end
+                    if fillW >= 0.01 then
+                        c.healthBarFill.PointA = Vector2.new(bx, by)
+                        c.healthBarFill.PointB = Vector2.new(bx + fillW, by)
+                        c.healthBarFill.PointC = Vector2.new(bx + fillW, by + barH)
+                        c.healthBarFill.PointD = Vector2.new(bx, by + barH)
+                        c.healthBarFill.Color = fillColor
+                        c.healthBarFill.Transparency = 1
+                        c.healthBarFill.Filled = true
+                        c.healthBarFill.Thickness = 0
+                        c.healthBarFill.Visible = true
                     else
-                        for _, q in c.healthBarFillGrad or {} do q.Visible = false end
-                        if fillW >= 0.01 then
-                            c.healthBarFill.PointA = Vector2.new(bx, by)
-                            c.healthBarFill.PointB = Vector2.new(bx + fillW, by)
-                            c.healthBarFill.PointC = Vector2.new(bx + fillW, by + barH)
-                            c.healthBarFill.PointD = Vector2.new(bx, by + barH)
-                            c.healthBarFill.Color = hColor
-                            c.healthBarFill.Transparency = 1
-                            c.healthBarFill.Filled = true
-                            c.healthBarFill.Thickness = 0
-                            c.healthBarFill.Visible = true
-                        else
-                            c.healthBarFill.Visible = false
-                        end
+                        c.healthBarFill.Visible = false
                     end
                 end
             else
@@ -7769,7 +7724,7 @@ track(RunService.RenderStepped, function()
                 for _, q in c.healthBarFillGrad or {} do q.Visible = false end
                 for _, L in c.healthBarOutline or {} do L.Visible = false end
             end
-            if esp.ArmorBar and c.armorBarBg and c.armorBarFill then
+            if do2D and esp.ArmorBar and c.armorBarBg and c.armorBarFill then
                 local bodyEffects = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(plr.Name) and workspace.Players[plr.Name]:FindFirstChild("BodyEffects")
                 local armorObj = bodyEffects and bodyEffects:FindFirstChild("Armor")
                 local armorVal = (armorObj and typeof(armorObj.Value) == "number" and armorObj.Value) or 0
@@ -7797,9 +7752,9 @@ track(RunService.RenderStepped, function()
                     local v = smoothStep(t)
                     return Color3.new(r1 + (r2 - r1) * (1 - v), g1 + (g2 - g1) * (1 - v), b1 + (b2 - b1) * (1 - v))
                 end
-                local numGradSegs = (drawIndex <= 4) and 16 or (drawIndex <= 8) and 12 or 8
                 local aBarOutlineThick = math.max(0.5, esp.ArmorBarOutlineThickness or 0.5)
                 local aBarOutlineColor = esp.ArmorBarOutlineColor or outlineColor
+                local aFillColor = (fillStyle == "Gradient") and armorBarGradColor(displayRatio) or aColor
                 local bx, by = 0, 0
                 if pos == "Left" then
                     barW = 2
@@ -7831,40 +7786,19 @@ track(RunService.RenderStepped, function()
                     else
                         for i = 1, 4 do if c.armorBarOutline then c.armorBarOutline[i].Visible = false end end
                     end
-                    local gradArr = (fillStyle == "Gradient") and ensureQuadArray(c, "armorBarFillGrad", numGradSegs) or nil
-                    if fillH >= 0.01 and fillStyle == "Gradient" and gradArr and numGradSegs >= 1 and fillH >= 0.5 then
-                        c.armorBarFill.Visible = false
-                        local segH = fillH / numGradSegs
-                        for i = 1, numGradSegs do
-                            local sy = fy + (i - 1) * segH
-                            local t = 1 - (i - 0.5) / numGradSegs
-                            local q = gradArr[i]
-                            q.PointA = Vector2.new(bx, sy)
-                            q.PointB = Vector2.new(bx + barW, sy)
-                            q.PointC = Vector2.new(bx + barW, sy + segH)
-                            q.PointD = Vector2.new(bx, sy + segH)
-                            q.Color = armorBarGradColor(t)
-                            q.Transparency = 1
-                            q.Filled = true
-                            q.Thickness = 0
-                            q.Visible = true
-                        end
-                        for i = numGradSegs + 1, #gradArr do gradArr[i].Visible = false end
+                    for _, q in c.armorBarFillGrad or {} do q.Visible = false end
+                    if fillH >= 0.01 then
+                        c.armorBarFill.PointA = Vector2.new(bx, fy)
+                        c.armorBarFill.PointB = Vector2.new(bx + barW, fy)
+                        c.armorBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
+                        c.armorBarFill.PointD = Vector2.new(bx, fy + fillH)
+                        c.armorBarFill.Color = aFillColor
+                        c.armorBarFill.Transparency = 1
+                        c.armorBarFill.Filled = true
+                        c.armorBarFill.Thickness = 0
+                        c.armorBarFill.Visible = true
                     else
-                        for _, q in c.armorBarFillGrad or {} do q.Visible = false end
-                        if fillH >= 0.01 then
-                            c.armorBarFill.PointA = Vector2.new(bx, fy)
-                            c.armorBarFill.PointB = Vector2.new(bx + barW, fy)
-                            c.armorBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
-                            c.armorBarFill.PointD = Vector2.new(bx, fy + fillH)
-                            c.armorBarFill.Color = aColor
-                            c.armorBarFill.Transparency = 1
-                            c.armorBarFill.Filled = true
-                            c.armorBarFill.Thickness = 0
-                            c.armorBarFill.Visible = true
-                        else
-                            c.armorBarFill.Visible = false
-                        end
+                        c.armorBarFill.Visible = false
                     end
                 elseif pos == "Right" then
                     barW = 2
@@ -7896,40 +7830,19 @@ track(RunService.RenderStepped, function()
                     else
                         for i = 1, 4 do if c.armorBarOutline then c.armorBarOutline[i].Visible = false end end
                     end
-                    local gradArr = (fillStyle == "Gradient") and ensureQuadArray(c, "armorBarFillGrad", numGradSegs) or nil
-                    if fillH >= 0.01 and fillStyle == "Gradient" and gradArr and numGradSegs >= 1 and fillH >= 0.5 then
-                        c.armorBarFill.Visible = false
-                        local segH = fillH / numGradSegs
-                        for i = 1, numGradSegs do
-                            local sy = fy + (i - 1) * segH
-                            local t = 1 - (i - 0.5) / numGradSegs
-                            local q = gradArr[i]
-                            q.PointA = Vector2.new(bx, sy)
-                            q.PointB = Vector2.new(bx + barW, sy)
-                            q.PointC = Vector2.new(bx + barW, sy + segH)
-                            q.PointD = Vector2.new(bx, sy + segH)
-                            q.Color = armorBarGradColor(t)
-                            q.Transparency = 1
-                            q.Filled = true
-                            q.Thickness = 0
-                            q.Visible = true
-                        end
-                        for i = numGradSegs + 1, #gradArr do gradArr[i].Visible = false end
+                    for _, q in c.armorBarFillGrad or {} do q.Visible = false end
+                    if fillH >= 0.01 then
+                        c.armorBarFill.PointA = Vector2.new(bx, fy)
+                        c.armorBarFill.PointB = Vector2.new(bx + barW, fy)
+                        c.armorBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
+                        c.armorBarFill.PointD = Vector2.new(bx, fy + fillH)
+                        c.armorBarFill.Color = aFillColor
+                        c.armorBarFill.Transparency = 1
+                        c.armorBarFill.Filled = true
+                        c.armorBarFill.Thickness = 0
+                        c.armorBarFill.Visible = true
                     else
-                        for _, q in c.armorBarFillGrad or {} do q.Visible = false end
-                        if fillH >= 0.01 then
-                            c.armorBarFill.PointA = Vector2.new(bx, fy)
-                            c.armorBarFill.PointB = Vector2.new(bx + barW, fy)
-                            c.armorBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
-                            c.armorBarFill.PointD = Vector2.new(bx, fy + fillH)
-                            c.armorBarFill.Color = aColor
-                            c.armorBarFill.Transparency = 1
-                            c.armorBarFill.Filled = true
-                            c.armorBarFill.Thickness = 0
-                            c.armorBarFill.Visible = true
-                        else
-                            c.armorBarFill.Visible = false
-                        end
+                        c.armorBarFill.Visible = false
                     end
                 else
                     barW = maxSx - minSx
@@ -7960,40 +7873,19 @@ track(RunService.RenderStepped, function()
                     else
                         for i = 1, 4 do if c.armorBarOutline then c.armorBarOutline[i].Visible = false end end
                     end
-                    local gradArr = (fillStyle == "Gradient") and ensureQuadArray(c, "armorBarFillGrad", numGradSegs) or nil
-                    if fillW >= 0.01 and fillStyle == "Gradient" and gradArr and numGradSegs >= 1 and fillW >= 0.5 then
-                        c.armorBarFill.Visible = false
-                        local segW = fillW / numGradSegs
-                        for i = 1, numGradSegs do
-                            local sx = bx + (i - 1) * segW
-                            local t = 1 - (i - 0.5) / numGradSegs
-                            local q = gradArr[i]
-                            q.PointA = Vector2.new(sx, by)
-                            q.PointB = Vector2.new(sx + segW, by)
-                            q.PointC = Vector2.new(sx + segW, by + barH)
-                            q.PointD = Vector2.new(sx, by + barH)
-                            q.Color = armorBarGradColor(t)
-                            q.Transparency = 1
-                            q.Filled = true
-                            q.Thickness = 0
-                            q.Visible = true
-                        end
-                        for i = numGradSegs + 1, #gradArr do gradArr[i].Visible = false end
+                    for _, q in c.armorBarFillGrad or {} do q.Visible = false end
+                    if fillW >= 0.01 then
+                        c.armorBarFill.PointA = Vector2.new(bx, by)
+                        c.armorBarFill.PointB = Vector2.new(bx + fillW, by)
+                        c.armorBarFill.PointC = Vector2.new(bx + fillW, by + barH)
+                        c.armorBarFill.PointD = Vector2.new(bx, by + barH)
+                        c.armorBarFill.Color = aFillColor
+                        c.armorBarFill.Transparency = 1
+                        c.armorBarFill.Filled = true
+                        c.armorBarFill.Thickness = 0
+                        c.armorBarFill.Visible = true
                     else
-                        for _, q in c.armorBarFillGrad or {} do q.Visible = false end
-                        if fillW >= 0.01 then
-                            c.armorBarFill.PointA = Vector2.new(bx, by)
-                            c.armorBarFill.PointB = Vector2.new(bx + fillW, by)
-                            c.armorBarFill.PointC = Vector2.new(bx + fillW, by + barH)
-                            c.armorBarFill.PointD = Vector2.new(bx, by + barH)
-                            c.armorBarFill.Color = aColor
-                            c.armorBarFill.Transparency = 1
-                            c.armorBarFill.Filled = true
-                            c.armorBarFill.Thickness = 0
-                            c.armorBarFill.Visible = true
-                        else
-                            c.armorBarFill.Visible = false
-                        end
+                        c.armorBarFill.Visible = false
                     end
                 end
             else
