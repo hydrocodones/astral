@@ -4462,14 +4462,14 @@ end
 -- Astral config: one table for UI and implementation (no getgenv)
 local Astral = {
 	Main = { Enabled = false },
-	AimAssist = { Enabled = false, Method = "Camlock", Keybind = "C", Mode = "Toggle", AimMode = "ClosestPoint", PartTarget = "UpperTorso", Smoothness = 0.01234422, EasingStyle = "Linear", EasingDirection = "Out", Deadzone = false, DeadzoneAmount = 50, UseOffsets = false, JumpOffset = 0, NormalOffset = 0, StickyAim = { Enabled = false, Sensitivity = 50 }, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
-	SilentAim = { Enabled = false, Mode = "Target", AimMode = "ClosestPoint", PartTarget = "UpperTorso", ClosestPointScale = "Scalar", ClosestPointScaleValue = 12, UsePrediction = false, HitChance = 100, AntiAimViewer = false, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
-	AntiCurve = { Enabled = false, Mode = "3D", AngularCurve = 2.0 }, -- Mode: "2D", "3D", or "1:1" (only redirect when aim is on target)
+	AimAssist = { Enabled = false, Method = "Camlock", Keybind = "C", Mode = "Toggle", AimMode = "ClosestPoint", PartTarget = "UpperTorso", Smoothness = 1, EasingStyle = "Linear", EasingDirection = "Out", Deadzone = false, DeadzoneAmount = 0, UseOffsets = false, JumpOffset = 0, NormalOffset = 0, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
+	SilentAim = { Enabled = false, Mode = "Target", AimMode = "ClosestPoint", PartTarget = "UpperTorso", ClosestPointScale = "Scalar", ClosestPointScaleValue = 0, UsePrediction = false, HitChance = 0, AntiAimViewer = false, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
+	AntiCurve = { Enabled = false, Mode = "3D", AngularCurve = 0, DontCurveVertically = false }, -- Mode: "2D" or "3D"
 	Checks = { WallCheck = false, UnlockOnWall = false, Reload = false, Knocked = false, Grabbed = false, ForceField = false, Friend = false, NoToolCheck = false, ChatFocused = false },
-	Range = { Enabled = false, Range = 1000 },
-	Triggerbot = { Enabled = false, TriggerKey = "T", Mode = "Toggle", TriggerWallCheck = false, TriggerDelay = 150, HumanizationDelay = 0, KnifeCheck = false, TriggerBlacklistedItems = {"[Knife]"}, OnlyOnCamlockTarget = false, FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1, 1, 1) } },
-	Resolver = { Enabled = false, ResolverType = "Velocity", Strength = 1 },
-	Prediction = { AimAssist = 0.05, SilentAim = 0.05, Triggerbot = 0.05, AutoPrediction = false },
+	Range = { Enabled = false, Range = 0 },
+	Triggerbot = { Enabled = false, TriggerKey = "T", Mode = "Toggle", TriggerWallCheck = false, TriggerDelay = 0, HumanizationDelay = 0, KnifeCheck = false, TriggerBlacklistedItems = {"[Knife]"}, OnlyOnCamlockTarget = false, FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1, 1, 1) } },
+	Resolver = { Enabled = false, ResolverType = "Velocity", Strength = 0 },
+	Prediction = { AimAssist = 0, SilentAim = 0, Triggerbot = 0, AutoPrediction = false },
 	Visuals = {
 		ESP = {
 			Enabled = false,
@@ -4477,25 +4477,25 @@ local Astral = {
 			BoxType = "2D", -- "2D" or "3D"
 			Chams = false,
 			ChamsColor = Color3.new(1, 0.25, 0.25),
-			ChamsTransparency = 0.5,
+			ChamsTransparency = 0,
 			ChamsStyle = "Full", -- "Full", "Fill only", "Outline only", "Two-tone"
 			ChamsDepthMode = "Occluded", -- "Occluded" (through walls only), "AlwaysOnTop"
 			ChamsOutlineColor = Color3.new(1, 1, 1),
 			ChamsTwoToneFillColor = Color3.new(1, 0.25, 0.25),
 			ChamsTwoToneOutlineColor = Color3.new(1, 1, 1),
-			ChamsOutlineTransparency = 0.35,
+			ChamsOutlineTransparency = 0,
 			ChamsPulse = false,
-			ChamsPulseSpeed = 0.4,
+			ChamsPulseSpeed = 0,
 			BoxColor = Color3.new(1, 1, 1),
 			BoxOutline = false,
 			OutlineColor = Color3.new(1, 1, 1),
-			OutlineThickness = 2,
+			OutlineThickness = 0.5,
 			BoxFill = false,
 			FillStyle = "Gradient", -- "Gradient" or "Solid"
-			BoxFillTransparency = 0.85,
+			BoxFillTransparency = 0,
 			GradientColor1 = Color3.new(1, 1, 1), -- white
 			GradientColor2 = Color3.new(0, 0, 0), -- black
-			GradientSpeed = 1,
+			GradientSpeed = 0.1,
 			Name = false,
 			NameType = "Display Name", -- "Display Name" or "Username"
 			Tool = false,
@@ -4518,26 +4518,26 @@ local Astral = {
 			RenderDistance = 0, -- 0 = unlimited (studs)
 			Tracers = false,
 			TracerOrigin = "Bottom", -- "Mouse", "Top", "Bottom"
-			TracerThickness = 1,
+			TracerThickness = 0.5,
 			TracerColor = Color3.new(1, 1, 1),
 			TracerOutline = false,
-			TracerOutlineThickness = 1,
+			TracerOutlineThickness = 0.5,
 			TracerOutlineColor = Color3.new(0, 0, 0),
 			KnockedFade = false,
 			Skeleton = false,
 			SkeletonColor = Color3.new(1, 1, 1),
-			SkeletonThickness = 1,
+			SkeletonThickness = 0.5,
 			SkeletonOutline = false,
 			SkeletonOutlineColor = Color3.new(0, 0, 0),
-			SkeletonOutlineThickness = 2,
+			SkeletonOutlineThickness = 1,
 		},
 		WorldVisuals = {
 			Enabled = false,
 			ClockTimeEnabled = false,
-			ClockTime = 12,
+			ClockTime = 0,
 			FogEnabled = false,
 			FogStart = 0,
-			FogEnd = 10000,
+			FogEnd = 0,
 			FogColor = Color3.new(0.75, 0.75, 0.75),
 			SaturationEnabled = false,
 			Saturation = 0,
@@ -4560,25 +4560,25 @@ local Astral = {
 			ShadowSoftnessEnabled = false,
 			ShadowSoftness = 0,
 			GeographicLatitudeEnabled = false,
-			GeographicLatitude = 41.28,
+			GeographicLatitude = 0,
 			BloomEnabled = false,
-			BloomIntensity = 0.4,
-			BloomSize = 24,
-			BloomThreshold = 0.8,
+			BloomIntensity = 0,
+			BloomSize = 0,
+			BloomThreshold = 0,
 			SunRaysEnabled = false,
-			SunRaysIntensity = 0.5,
-			SunRaysSpread = 1,
+			SunRaysIntensity = 0,
+			SunRaysSpread = 0,
 			AtmosphereEnabled = false,
-			AtmosphereDensity = 0.3,
+			AtmosphereDensity = 0,
 			AtmosphereOffset = 0,
 			AtmosphereColor = Color3.new(0.2, 0.4, 0.6),
 			AtmosphereDecay = Color3.new(0.2, 0.4, 0.6),
 		},
 	},
-	Movement = { Enabled = false, WalkSpeed = 200, JumpPower = 200, Keybind = "V", SpeedType = "WalkSpeed", CFrameSpeed = 200 },
-	GunModifications = { NoSpread = { Enabled = false, Amount = 0 }, ClientBulletRedirection = { Enabled = false, Weapons = {"[Revolver]", "[Double-Barrel SG]", "[TacticalShotgun]", "[AR]", "[SMG]", "[AK47]", "[Shotgun]", "[Silencer]", "[SilencerAR]", "[AUG]", "[P90]", "[Rifle]", "[LMG]"} }, Range = { Enabled = false, Value = 500 }, ShootingSlowdown = { Enabled = false, Value = 0 }, Wallbang = { Enabled = false } },
-	Rage = { Orbit = { Enabled = false, Mode = "Strafe", Speed = 10, Distance = 10, Height = 5, Randomizer = 5 }, SpectateTarget = false, Fly = { Enabled = false, Keybind = "F", Mode = "CFrame", Speed = 50, VerticalSpeed = 50, SpeedMultiplier = 1, NoClip = false }, HitboxExpander = { Enabled = false, Part = "HumanoidRootPart", Size = 5, Visualizer = false, VisualizerTransparency = 0.5, Color = Color3.new(1, 0, 0), NoCollide = false }, Spinbot = { Enabled = false, Speed = 50 }, },
-	Misc = { AntiSit = false, NoJumpCooldown = false, AntiVoid = false },
+	Movement = { Enabled = false, WalkSpeed = 0, JumpPower = 0, Keybind = "V", SpeedType = "WalkSpeed", CFrameSpeed = 0 },
+	GunModifications = { NoSpread = { Enabled = false, Amount = 0 }, ClientBulletRedirection = { Enabled = false, Weapons = {"[Revolver]", "[Double-Barrel SG]", "[TacticalShotgun]", "[AR]", "[SMG]", "[AK47]", "[Shotgun]", "[Silencer]", "[SilencerAR]", "[AUG]", "[P90]", "[Rifle]", "[LMG]"} }, Range = { Enabled = false, Value = 0 }, ShootingSlowdown = { Enabled = false, Value = 0 }, Wallbang = { Enabled = false } },
+	Rage = { Orbit = { Enabled = false, Mode = "Strafe", Speed = 0, Distance = 0, Height = 0, Randomizer = 0 }, SpectateTarget = false, Fly = { Enabled = false, Keybind = "F", Mode = "CFrame", Speed = 0, VerticalSpeed = 0, SpeedMultiplier = 0, NoClip = false }, HitboxExpander = { Enabled = false, Part = "HumanoidRootPart", Size = 0, Visualizer = false, VisualizerTransparency = 0, Color = Color3.new(1, 0, 0), NoCollide = false }, Spinbot = { Enabled = false, Speed = 0 }, },
+	Misc = { AntiSit = false, NoJumpCooldown = false, AntiVoid = false, AntiTrip = false },
 	Macro = { Keybind = "Z", Enabled = false, Acceleration = 0.0 },
 }
 
@@ -4733,25 +4733,7 @@ do
 	aa:dropdown({ name = "Aim Mode", flag = "aa_aimmode", items = {"ClosestPart", "ClosestPoint", "Part"}, default = Config.AimAssist.AimMode, callback = function(v) Config.AimAssist.AimMode = v end })
 	local r15Parts = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand", "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot"}
 	aa:dropdown({ name = "Part Target", flag = "aa_parttarget", items = r15Parts, default = Config.AimAssist.PartTarget, callback = function(v) Config.AimAssist.PartTarget = v end })
-	aa:slider({ name = "Smoothness", flag = "aa_smoothness", min = 1, max = 100, default = (function()
-		local s = Config.AimAssist.Smoothness or 0.012
-		if s >= 0.4 then return math.clamp(math.floor(1 + 19 * (s - 0.4) / 0.6), 1, 100) end
-		if s >= 0.06 then return math.clamp(math.floor(21 + 29 * (0.4 - s) / 0.34), 1, 100) end
-		local t = (1 - (s - 0.001) / 0.059) ^ (1 / 0.6)
-		return math.clamp(math.floor(51 + 49 * t), 1, 100)
-	end)(), callback = function(v)
-		-- 0-20: blatant (high smoothness). 21-50: semi smooth. 51-100: legit smooth (low smoothness).
-		if v <= 20 then
-			local t = (v - 1) / 19
-			Config.AimAssist.Smoothness = 0.4 + t * 0.6
-		elseif v <= 50 then
-			local t = (v - 21) / 29
-			Config.AimAssist.Smoothness = 0.06 + (0.4 - 0.06) * (1 - t)
-		else
-			local t = (v - 51) / 49
-			Config.AimAssist.Smoothness = 0.001 + (0.06 - 0.001) * (1 - t ^ 0.6)
-		end
-	end })
+	aa:slider({ name = "Smoothness", flag = "aa_smoothness", min = 0, max = 100, default = 0, callback = function(v) Config.AimAssist.Smoothness = math.min(1, 0.005 * 2 ^ ((100 - v) / 10)) end })
 	aa:dropdown({ name = "Easing Style", flag = "aa_easingstyle", items = {"Linear", "Sine", "Back", "Quad", "Quart", "Quint", "Bounce", "Elastic", "Exponential", "Circular", "Cubic"}, default = Config.AimAssist.EasingStyle or "Linear", callback = function(v) Config.AimAssist.EasingStyle = v end })
 	aa:dropdown({ name = "Easing Direction", flag = "aa_easingdir", items = {"In", "Out", "InOut"}, default = Config.AimAssist.EasingDirection or "Out", callback = function(v) Config.AimAssist.EasingDirection = v end })
 	aa:toggle({ name = "Deadzone", flag = "aa_deadzone", default = Config.AimAssist.Deadzone, callback = function(v) Config.AimAssist.Deadzone = v end })
@@ -4759,8 +4741,6 @@ do
 	aa:toggle({ name = "Offsets", flag = "aa_useoffsets", default = Config.AimAssist.UseOffsets, callback = function(v) Config.AimAssist.UseOffsets = v end })
 	aa:slider({ name = "Jump Offset", flag = "aa_jumpoffset", min = -50, max = 50, default = math.floor((Config.AimAssist.JumpOffset or 0) * 10), callback = function(v) Config.AimAssist.JumpOffset = v / 10 end })
 	aa:slider({ name = "Normal Offset", flag = "aa_normaloffset", min = -50, max = 50, default = math.floor((Config.AimAssist.NormalOffset or 0) * 10), callback = function(v) Config.AimAssist.NormalOffset = v / 10 end })
-	aa:toggle({ name = "Sticky Aim", flag = "aa_sticky_enabled", default = Config.AimAssist.StickyAim and Config.AimAssist.StickyAim.Enabled, callback = function(v) if not Config.AimAssist.StickyAim then Config.AimAssist.StickyAim = { Enabled = false, Sensitivity = 50 } end Config.AimAssist.StickyAim.Enabled = v end })
-	aa:slider({ name = "Sticky Aim Sensitivity", flag = "aa_sticky_sensitivity", min = 0, max = 100, default = Config.AimAssist.StickyAim and Config.AimAssist.StickyAim.Sensitivity or 50, callback = function(v) if not Config.AimAssist.StickyAim then Config.AimAssist.StickyAim = { Enabled = false, Sensitivity = 50 } end Config.AimAssist.StickyAim.Sensitivity = v end })
 	aa:toggle({ name = "Show FOV", flag = "aa_fov_enabled", default = Config.AimAssist.FOV and Config.AimAssist.FOV.Enabled, callback = function(v) if not Config.AimAssist.FOV then Config.AimAssist.FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) } end Config.AimAssist.FOV.Enabled = v end })
 	aa:slider({ name = "FOV Size", flag = "aa_fov_size", min = 0, max = 500, default = Config.AimAssist.FOV and Config.AimAssist.FOV.Size or 180, callback = function(v) if not Config.AimAssist.FOV then Config.AimAssist.FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) } end Config.AimAssist.FOV.Size = v end })
 	aa:slider({ name = "FOV Thickness", flag = "aa_fov_thick", min = 0.5, max = 5, default = Config.AimAssist.FOV and Config.AimAssist.FOV.Thickness or 1, callback = function(v) if not Config.AimAssist.FOV then Config.AimAssist.FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) } end Config.AimAssist.FOV.Thickness = v end })
@@ -4793,8 +4773,9 @@ do
 
 	local ac = legitTab:section({ name = "Anti Curve", side = "right" })
 	ac:toggle({ name = "Enabled", flag = "ac_enabled", default = Config.AntiCurve.Enabled, callback = function(v) Config.AntiCurve.Enabled = v end })
-	ac:dropdown({ name = "Mode", flag = "ac_mode", items = {"2D", "3D", "1:1"}, default = Config.AntiCurve.Mode, callback = function(v) Config.AntiCurve.Mode = v end })
+	ac:dropdown({ name = "Mode", flag = "ac_mode", items = {"2D", "3D"}, default = Config.AntiCurve.Mode == "2D" and "2D" or "3D", callback = function(v) Config.AntiCurve.Mode = v end })
 	ac:slider({ name = "Angular Curve", flag = "ac_angular", min = 0, max = 10, default = Config.AntiCurve.AngularCurve or 2, callback = function(v) Config.AntiCurve.AngularCurve = v end })
+	ac:toggle({ name = "Don't curve vertically", flag = "ac_dont_curve_vertically", default = Config.AntiCurve.DontCurveVertically, callback = function(v) Config.AntiCurve.DontCurveVertically = v end })
 	uiYield()
 
 	local legitCbr = legitTab:section({ name = "Client Bullet Redirection", side = "right" })
@@ -4853,9 +4834,9 @@ do
 	-- Prediction: 0.01 steps so values display as 0.05, 0.06, 0.11 (first 4 digits, no long decimals)
 	local predStep = 0.01
 	local function roundPred(v) return math.floor((v or 0) * 100 + 0.5) / 100 end
-	pred:slider({ name = "Aim Assist", flag = "pred_aa", min = 0, max = 2, interval = predStep, default = roundPred(Config.Prediction.AimAssist or 0.05), callback = function(v) Config.Prediction.AimAssist = roundPred(v) end })
-	pred:slider({ name = "Silent Aim", flag = "pred_sa", min = 0, max = 2, interval = predStep, default = roundPred(Config.Prediction.SilentAim or 0.05), callback = function(v) Config.Prediction.SilentAim = roundPred(v) end })
-	pred:slider({ name = "Triggerbot", flag = "pred_tb", min = 0, max = 2, interval = predStep, default = roundPred(Config.Prediction.Triggerbot or 0.05), callback = function(v) Config.Prediction.Triggerbot = roundPred(v) end })
+	pred:slider({ name = "Aim Assist", flag = "pred_aa", min = 0, max = 2, interval = predStep, default = roundPred(Config.Prediction.AimAssist or 0), callback = function(v) Config.Prediction.AimAssist = roundPred(v) end })
+	pred:slider({ name = "Silent Aim", flag = "pred_sa", min = 0, max = 2, interval = predStep, default = roundPred(Config.Prediction.SilentAim or 0), callback = function(v) Config.Prediction.SilentAim = roundPred(v) end })
+	pred:slider({ name = "Triggerbot", flag = "pred_tb", min = 0, max = 2, interval = predStep, default = roundPred(Config.Prediction.Triggerbot or 0), callback = function(v) Config.Prediction.Triggerbot = roundPred(v) end })
 	uiYield()
 
 	local ch = legitTab:section({ name = "Checks", side = "right" })
@@ -4874,10 +4855,20 @@ do
 	local rageTab = window:tab({ name = "Rage" })
 	local moveSec = rageTab:section({ name = "Movement", side = "left" })
 	moveSec:toggle({ name = "Enabled", flag = "move_enabled", default = Config.Movement.Enabled, callback = function(v) Config.Movement.Enabled = v end })
-	moveSec:dropdown({ name = "Speed Type", flag = "move_speedtype", items = {"Walkspeed & Jumppower", "Velocity"}, default = (Config.Movement.SpeedType or "WalkSpeed") == "WalkSpeed" and "Walkspeed & Jumppower" or "Velocity", callback = function(v) Config.Movement.SpeedType = (v == "Walkspeed & Jumppower") and "WalkSpeed" or "Velocity" end })
+	local function movementSpeedTypeDefault()
+		local st = Config.Movement.SpeedType or "WalkSpeed"
+		if st == "CFrame" then return "CFrame" end
+		if st == "Velocity" then return "Velocity" end
+		return "Walkspeed & Jumppower"
+	end
+	moveSec:dropdown({ name = "Speed Type", flag = "move_speedtype", items = {"Walkspeed & Jumppower", "Velocity", "CFrame"}, default = movementSpeedTypeDefault(), callback = function(v)
+		if v == "Walkspeed & Jumppower" then Config.Movement.SpeedType = "WalkSpeed"
+		elseif v == "CFrame" then Config.Movement.SpeedType = "CFrame"
+		else Config.Movement.SpeedType = "Velocity" end
+	end })
 	moveSec:slider({ name = "Walk Speed", flag = "move_ws", min = 0, max = 500, default = Config.Movement.WalkSpeed or 200, callback = function(v) Config.Movement.WalkSpeed = v end })
 	moveSec:slider({ name = "Jump Power", flag = "move_jp", min = 0, max = 500, default = Config.Movement.JumpPower or 200, callback = function(v) Config.Movement.JumpPower = v end })
-	moveSec:slider({ name = "Velocity Speed", flag = "move_cframespeed", min = 0, max = 500, default = Config.Movement.CFrameSpeed or 200, callback = function(v) Config.Movement.CFrameSpeed = v end })
+	moveSec:slider({ name = "Velocity / CFrame Speed", flag = "move_cframespeed", min = 0, max = 1000, default = Config.Movement.CFrameSpeed or 200, callback = function(v) Config.Movement.CFrameSpeed = v end })
 	moveSec:keybind({ name = "Keybind", flag = "move_keybind", display = "Movement", default = Enum.KeyCode[Config.Movement.Keybind and Config.Movement.Keybind:upper() or "V"], mode = "toggle", callback = function()
 		local f = flags["move_keybind"]
 		if f and f.key and f.key ~= Enum.KeyCode.Escape then Config.Movement.Keybind = keyToStr(f.key) end
@@ -4942,6 +4933,7 @@ do
 	miscSec:toggle({ name = "Anti Sit", flag = "misc_antisit", default = Config.Misc.AntiSit, callback = function(v) Config.Misc.AntiSit = v end })
 	miscSec:toggle({ name = "No Jump Cooldown", flag = "misc_nojump", default = Config.Misc.NoJumpCooldown, callback = function(v) Config.Misc.NoJumpCooldown = v end })
 	miscSec:toggle({ name = "Anti Void", flag = "misc_antivoid", default = Config.Misc.AntiVoid, callback = function(v) Config.Misc.AntiVoid = v end })
+	miscSec:toggle({ name = "Anti Trip", flag = "misc_antitrip", default = Config.Misc.AntiTrip, callback = function(v) Config.Misc.AntiTrip = v end })
 	local macroSec = miscTab:section({ name = "Macro", side = "left" })
 	macroSec:toggle({ name = "Enabled", flag = "macro_enabled", default = Config.Macro.Enabled, callback = function(v) Config.Macro.Enabled = v end })
 	macroSec:keybind({ name = "Keybind", flag = "macro_keybind", display = "Macro", default = Enum.KeyCode[Config.Macro.Keybind and Config.Macro.Keybind:upper() or "Z"], mode = "toggle", callback = function()
@@ -6874,6 +6866,7 @@ end)
 -- ESP: accurate R15/R6 bounding boxes, 2D/3D, chams, box fill with two-color gradient animation, name/tool/distance
 local espCache = {} -- [player] = { outline, fillQuad, box3d, highlight, nameText, toolText, distanceText }
 local espAABBCache = {} -- [char] = { parts = {BasePart,...}, numChildren = N } — avoid GetDescendants() every frame
+local espGradientScreenGui = nil -- shared ScreenGui for UIGradient box fill (UE-style rotating gradient)
 local espFontMap = { UI = 0, System = 1, Plex = 2, Monospace = 3 }
 local function getCharacterAABB(char)
     if not char or not char:IsA("Model") then return nil, nil end
@@ -6948,6 +6941,36 @@ local function getBoxCorners(minV, maxV)
         Vector3.new(maxV.X, maxV.Y, maxV.Z), Vector3.new(minV.X, maxV.Y, maxV.Z),
     }
 end
+-- 2D box from body parts: project each part's bounds to screen and take min/max. Stays a tight rect at any angle (no perspective tilt).
+local function getCharacterScreenBounds(char)
+    local parts = espAABBCache[char] and espAABBCache[char].parts
+    if not parts or #parts == 0 then
+        return nil
+    end
+    local minSx, minSy = math.huge, math.huge
+    local maxSx, maxSy = -math.huge, -math.huge
+    for i = 1, #parts do
+        local part = parts[i]
+        if part and part.Parent then
+            local pos, sz = part.Position, part.Size
+            local hx, hy, hz = sz.X * 0.5, sz.Y * 0.5, sz.Z * 0.5
+            for ix = -1, 1, 2 do
+                for iy = -1, 1, 2 do
+                    for iz = -1, 1, 2 do
+                        local corner = Vector3.new(pos.X + ix * hx, pos.Y + iy * hy, pos.Z + iz * hz)
+                        local s = camera:WorldToViewportPoint(corner)
+                        if s.Z > 0 then
+                            minSx = min(minSx, s.X) maxSx = max(maxSx, s.X)
+                            minSy = min(minSy, s.Y) maxSy = max(maxSy, s.Y)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    if minSx == math.huge then return nil end
+    return minSx, minSy, maxSx, maxSy
+end
 local boxEdges = { {1,2},{2,3},{3,4},{4,1}, {5,6},{6,7},{7,8},{8,5}, {1,5},{2,6},{3,7},{4,8} }
 -- Skeleton bone pairs (R6 + R15). Avoid using HumanoidRootPart as a hub (causes "bent/kinked" look).
 local skeletonBonePairs = {
@@ -7008,6 +7031,14 @@ local function ensureEspDrawings(plr, boxType, hasFill, needText, needHealthBar,
             c.outlineOuter[i] = L
         end
     end
+    if not c.outlineInner and boxType == "2D" then
+        c.outlineInner = {}
+        for i = 1, 4 do
+            local L = Drawing.new("Line")
+            L.Visible = false
+            c.outlineInner[i] = L
+        end
+    end
     if needHealthBar and not c.healthBarBg and (boxType == "2D" or boxType == "3D") then
         c.healthBarBg = Drawing.new("Quad")
         c.healthBarBg.Visible = false
@@ -7060,6 +7091,24 @@ local function ensureEspDrawings(plr, boxType, hasFill, needText, needHealthBar,
         c.fillQuad.Filled = true
         c.fillQuad.Thickness = 1
         if c.fillQuad.ZIndex then c.fillQuad.ZIndex = 0 end
+    end
+    if not c.gradientFrame and hasFill and boxType == "2D" then
+        if not espGradientScreenGui then
+            espGradientScreenGui = Instance.new("ScreenGui", coregui)
+            espGradientScreenGui.Name = "AstralEspGradient"
+            espGradientScreenGui.ResetOnSpawn = false
+        end
+        local frame = Instance.new("Frame", espGradientScreenGui)
+        frame.BorderSizePixel = 0
+        frame.BackgroundColor3 = Color3.new(1, 1, 1)
+        frame.BackgroundTransparency = 1
+        frame.Visible = false
+        frame.ZIndex = -9e9
+        local grad = Instance.new("UIGradient", frame)
+        grad.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(1,0.2,0.5)), ColorSequenceKeypoint.new(1, Color3.new(0.2,0.5,1)) })
+        grad.Rotation = 0
+        c.gradientFrame = frame
+        c.gradient = grad
     end
     if not c.fillQuads and hasFill and boxType == "2D" then
         c.fillQuads = {}
@@ -7136,6 +7185,7 @@ local function clearEspPlayer(plr)
     c.highlight = nil
     for _, L in c.outline or {} do pcall(function() L.Visible = false end) end
     for _, L in c.outlineOuter or {} do pcall(function() L.Visible = false end) end
+    for _, L in c.outlineInner or {} do pcall(function() L.Visible = false end) end
     if c.healthBarBg then pcall(function() c.healthBarBg.Visible = false end) end
     if c.healthBarFill then pcall(function() c.healthBarFill.Visible = false end) end
     for _, q in c.healthBarFillGrad or {} do pcall(function() q.Visible = false end) end
@@ -7145,6 +7195,7 @@ local function clearEspPlayer(plr)
     for _, q in c.armorBarFillGrad or {} do pcall(function() q.Visible = false end) end
     for _, L in c.armorBarOutline or {} do pcall(function() L.Visible = false end) end
     if c.fillQuad then pcall(function() c.fillQuad.Visible = false end) end
+    if c.gradientFrame then pcall(function() c.gradientFrame.Visible = false end) end
     for _, q in c.fillQuads or {} do pcall(function() q.Visible = false end) end
     for _, L in c.box3d or {} do pcall(function() L.Visible = false end) end
     for _, L in c.box3dOuter or {} do pcall(function() L.Visible = false end) end
@@ -7168,6 +7219,7 @@ track(RunService.RenderStepped, function()
             if c.highlight and c.highlight.Parent then pcall(function() c.highlight:Destroy() end) end
             for _, L in c.outline or {} do pcall(function() L.Visible = false end) end
             for _, L in c.outlineOuter or {} do pcall(function() L.Visible = false end) end
+            for _, L in c.outlineInner or {} do pcall(function() L.Visible = false end) end
             if c.healthBarBg then pcall(function() c.healthBarBg.Visible = false end) end
             if c.healthBarFill then pcall(function() c.healthBarFill.Visible = false end) end
             for _, q in c.healthBarFillGrad or {} do pcall(function() q.Visible = false end) end
@@ -7177,6 +7229,7 @@ track(RunService.RenderStepped, function()
             for _, q in c.armorBarFillGrad or {} do pcall(function() q.Visible = false end) end
             for _, L in c.armorBarOutline or {} do pcall(function() L.Visible = false end) end
             if c.fillQuad then pcall(function() c.fillQuad.Visible = false end) end
+            if c.gradientFrame then pcall(function() c.gradientFrame.Visible = false end) end
             for _, q in c.fillQuads or {} do pcall(function() q.Visible = false end) end
             for _, L in c.box3d or {} do pcall(function() L.Visible = false end) end
             for _, L in c.box3dOuter or {} do pcall(function() L.Visible = false end) end
@@ -7208,7 +7261,6 @@ track(RunService.RenderStepped, function()
     local c1 = esp.GradientColor1 or Color3.new(1, 0.2, 0.5)
     local c2 = esp.GradientColor2 or Color3.new(0.2, 0.5, 1)
     local gradSpeed = esp.GradientSpeed or 1
-    local gradientT = (now * gradSpeed * 0.2) % 1
     local boxColor = esp.BoxColor or Color3.new(1,1,1)
     local outlineThick = esp.OutlineThickness or 2
     local outlineColor = esp.OutlineColor or boxColor
@@ -7269,11 +7321,20 @@ track(RunService.RenderStepped, function()
                 local s, on = camera:WorldToViewportPoint(corners[i])
                 screen[i] = Vector2.new(s.X, s.Y)
             end
-            local minSx, minSy = math.huge, math.huge
-            local maxSx, maxSy = -math.huge, -math.huge
-            for i = 1, 8 do
-                minSx = min(minSx, screen[i].X) maxSx = max(maxSx, screen[i].X)
-                minSy = min(minSy, screen[i].Y) maxSy = max(maxSy, screen[i].Y)
+            -- 2D box: use body-part screen bounds (tight rect at any angle); fallback to 3D AABB projection
+            local minSx, minSy, maxSx, maxSy
+            do
+                local pMinSx, pMinSy, pMaxSx, pMaxSy = getCharacterScreenBounds(char)
+                if pMinSx then
+                    minSx, minSy, maxSx, maxSy = pMinSx, pMinSy, pMaxSx, pMaxSy
+                else
+                    minSx, minSy = math.huge, math.huge
+                    maxSx, maxSy = -math.huge, -math.huge
+                    for i = 1, 8 do
+                        minSx = min(minSx, screen[i].X) maxSx = max(maxSx, screen[i].X)
+                        minSy = min(minSy, screen[i].Y) maxSy = max(maxSy, screen[i].Y)
+                    end
+                end
             end
             local boxW, boxH = maxSx - minSx, maxSy - minSy
             local vw, vh = camera.ViewportSize.X, camera.ViewportSize.Y
@@ -7382,7 +7443,15 @@ track(RunService.RenderStepped, function()
                 local fright = Vector2.new(fex, fcy)
                 local fbottom = Vector2.new(fcx, fey)
                 local fleft = Vector2.new(fsx, fcy)
-                if doOutline and c.outlineOuter then
+                -- Fill fixed to player box (no expansion) for gradient
+                local fillCx, fillCy = (minSx + maxSx) * 0.5, (minSy + maxSy) * 0.5
+                local fillCenter = Vector2.new(fillCx, fillCy)
+                local fillTop = Vector2.new(fillCx, minSy)
+                local fillRight = Vector2.new(maxSx, fillCy)
+                local fillBottom = Vector2.new(fillCx, maxSy)
+                local fillLeft = Vector2.new(minSx, fillCy)
+                if doOutline and c.outlineOuter and c.outlineInner then
+                    -- Outline outside and inside the box
                     local out = math.max(1, math.ceil(outlineThick))
                     local oMinSx, oMinSy = minSx - out, minSy - out
                     local oMaxSx, oMaxSy = maxSx + out, maxSy + out
@@ -7394,34 +7463,45 @@ track(RunService.RenderStepped, function()
                     c.outlineOuter[2].From = otr c.outlineOuter[2].To = obr c.outlineOuter[2].Visible = true c.outlineOuter[2].Color = outlineColor c.outlineOuter[2].Thickness = outlineThick
                     c.outlineOuter[3].From = obr c.outlineOuter[3].To = obl c.outlineOuter[3].Visible = true c.outlineOuter[3].Color = outlineColor c.outlineOuter[3].Thickness = outlineThick
                     c.outlineOuter[4].From = obl c.outlineOuter[4].To = otl c.outlineOuter[4].Visible = true c.outlineOuter[4].Color = outlineColor c.outlineOuter[4].Thickness = outlineThick
+                    -- Inner outline (inset from box edge)
+                    local iMinSx, iMinSy = minSx + out, minSy + out
+                    local iMaxSx, iMaxSy = maxSx - out, maxSy - out
+                    if iMaxSx > iMinSx and iMaxSy > iMinSy then
+                        local itl = Vector2.new(iMinSx, iMinSy)
+                        local itr = Vector2.new(iMaxSx, iMinSy)
+                        local ibr = Vector2.new(iMaxSx, iMaxSy)
+                        local ibl = Vector2.new(iMinSx, iMaxSy)
+                        c.outlineInner[1].From = itl c.outlineInner[1].To = itr c.outlineInner[1].Visible = true c.outlineInner[1].Color = outlineColor c.outlineInner[1].Thickness = outlineThick
+                        c.outlineInner[2].From = itr c.outlineInner[2].To = ibr c.outlineInner[2].Visible = true c.outlineInner[2].Color = outlineColor c.outlineInner[2].Thickness = outlineThick
+                        c.outlineInner[3].From = ibr c.outlineInner[3].To = ibl c.outlineInner[3].Visible = true c.outlineInner[3].Color = outlineColor c.outlineInner[3].Thickness = outlineThick
+                        c.outlineInner[4].From = ibl c.outlineInner[4].To = itl c.outlineInner[4].Visible = true c.outlineInner[4].Color = outlineColor c.outlineInner[4].Thickness = outlineThick
+                    else
+                        for i = 1, 4 do c.outlineInner[i].Visible = false end
+                    end
                 else
                     for i = 1, 4 do if c.outlineOuter then c.outlineOuter[i].Visible = false end end
+                    for i = 1, 4 do if c.outlineInner then c.outlineInner[i].Visible = false end end
                 end
                 if doFillThisPlayer then
                     local fillStyle = esp.FillStyle or "Gradient"
-                    if fillStyle == "Gradient" and c.fillQuads then
+                    if fillStyle == "Gradient" and c.gradientFrame and c.gradient then
+                        for _, q in c.fillQuads or {} do q.Visible = false end
                         if c.fillQuad then c.fillQuad.Visible = false end
-                        local verts = { ftop, ftr, fright, fbr, fbottom, fbl, fleft, ftl }
-                        for i = 1, 8 do
-                            local j = (i < 8) and (i + 1) or 1
-                            local segT = ((i - 1) / 8 + gradientT) % 1
-                            local r = c1.R + (c2.R - c1.R) * segT
-                            local g = c1.G + (c2.G - c1.G) * segT
-                            local b = c1.B + (c2.B - c1.B) * segT
-                            local segColor = Color3.new(r, g, b)
-                            local q = c.fillQuads[i]
-                            q.PointA = fcenter
-                            q.PointB = verts[i]
-                            q.PointC = verts[j]
-                            q.PointD = fcenter
-                            q.Color = segColor
-                            q.Transparency = fillTrans
-                            q.Filled = true
-                            q.Visible = true
-                        end
+                        -- UE-style: Frame + UIGradient with rotating direction (math.sin(tick()*2)*180)
+                        local boxW, boxH = maxSx - minSx, maxSy - minSy
+                        c.gradientFrame.Position = UDim2.new(0, minSx, 0, minSy - gui_offset)
+                        c.gradientFrame.Size = UDim2.new(0, boxW, 0, boxH)
+                        c.gradientFrame.BackgroundTransparency = fillTrans
+                        c.gradientFrame.Visible = true
+                        c.gradient.Color = ColorSequence.new({
+                            ColorSequenceKeypoint.new(0, c1),
+                            ColorSequenceKeypoint.new(1, c2)
+                        })
+                        c.gradient.Rotation = math.sin(now * 2 * gradSpeed) * 180
                     elseif fillStyle == "Solid" and c.fillQuad then
                         for _, q in c.fillQuads or {} do q.Visible = false end
-                        c.fillQuad.PointA = ftl c.fillQuad.PointB = ftr c.fillQuad.PointC = fbr c.fillQuad.PointD = fbl
+                        if c.gradientFrame then c.gradientFrame.Visible = false end
+                        c.fillQuad.PointA = tl c.fillQuad.PointB = tr c.fillQuad.PointC = br c.fillQuad.PointD = bl
                         c.fillQuad.Color = boxColor
                         c.fillQuad.Transparency = fillTrans
                         c.fillQuad.Filled = true
@@ -7429,6 +7509,7 @@ track(RunService.RenderStepped, function()
                     end
                 else
                     if c.fillQuad then c.fillQuad.Visible = false end
+                    if c.gradientFrame then c.gradientFrame.Visible = false end
                     for _, q in c.fillQuads or {} do q.Visible = false end
                 end
                 local ol = c.outline
@@ -7441,7 +7522,9 @@ track(RunService.RenderStepped, function()
             else
                 if c.outline then for _, L in c.outline do L.Visible = false end end
                 if c.outlineOuter then for _, L in c.outlineOuter do L.Visible = false end end
+                if c.outlineInner then for _, L in c.outlineInner do L.Visible = false end end
                 if c.fillQuad then c.fillQuad.Visible = false end
+                if c.gradientFrame then c.gradientFrame.Visible = false end
                 for _, q in c.fillQuads or {} do q.Visible = false end
             end
             if esp.HealthBar and c.healthBarBg and c.healthBarFill then
@@ -8038,9 +8121,11 @@ track(RunService.RenderStepped, function()
                 if c.armorBarFill then c.armorBarFill.Transparency = fadeT end
                 for _, q in c.armorBarFillGrad or {} do if q.Visible then q.Transparency = fadeT end end
                 if c.fillQuad and c.fillQuad.Visible then c.fillQuad.Transparency = boxFillTrans * fadeT end
+                if c.gradientFrame and c.gradientFrame.Visible then c.gradientFrame.BackgroundTransparency = boxFillTrans * fadeT end
                 for _, q in c.fillQuads or {} do if q.Visible then q.Transparency = boxFillTrans * fadeT end end
                 for _, L in c.outline or {} do if L.Visible then pcall(function() L.Transparency = fadeT end) end end
                 for _, L in c.outlineOuter or {} do if L.Visible then pcall(function() L.Transparency = fadeT end) end end
+                for _, L in c.outlineInner or {} do if L.Visible then pcall(function() L.Transparency = fadeT end) end end
                 for _, L in c.healthBarOutline or {} do if L.Visible then pcall(function() L.Transparency = fadeT end) end end
                 for _, L in c.armorBarOutline or {} do if L.Visible then pcall(function() L.Transparency = fadeT end) end end
                 for _, L in c.box3d or {} do if L.Visible then pcall(function() L.Transparency = fadeT end) end end
@@ -8548,55 +8633,8 @@ local function updateMouse()
         return -- Already close enough
     end
     
-    -- Get base smoothness and easing function
-    local baseSmoothness = (aa and aa.Smoothness) or 0.012
-    local easingFunc = getEasingFunction((aa and aa.EasingStyle) or "Linear", (aa and aa.EasingDirection) or "Out")
-    
-    -- Calculate how far we are from the target (normalized 0-1)
-    local maxDistance = 1000 -- Maximum expected screen distance
-    local normalizedDistance = math.min(distance / maxDistance, 1)
-    
-    -- Apply easing function to normalized distance
-    local easedFactor = easingFunc(normalizedDistance)
-    
-    -- Calculate smoothness factor similar to camera
-    -- Lower smoothness value = smoother movement (more interpolation)
-    -- Higher smoothness value = snappier movement (less interpolation)
-    local adjustedSmoothness = baseSmoothness
-    
-    -- Apply easing-based smoothness adjustment (similar to camera)
-    local easingStyle = (aa and aa.EasingStyle) or "Linear"
-    local easingDirection = (aa and aa.EasingDirection) or "Out"
-    local distanceAdjustedSmoothness = baseSmoothness
-    if easingStyle == "Linear" then
-        distanceAdjustedSmoothness = baseSmoothness
-    elseif easingDirection == "In" then
-        distanceAdjustedSmoothness = baseSmoothness * (0.3 + easedFactor * 1.4)
-    elseif easingDirection == "Out" then
-        distanceAdjustedSmoothness = baseSmoothness * (1.7 - easedFactor * 0.7)
-    elseif easingDirection == "InOut" then
-        local midPoint = 0.5
-        local distanceFromMid = math.abs(normalizedDistance - midPoint) / midPoint
-        distanceAdjustedSmoothness = baseSmoothness * (0.6 + (1 - distanceFromMid) * 0.8)
-    end
-    adjustedSmoothness = distanceAdjustedSmoothness
-    -- Sticky aim: when cursor is close to target, reduce smoothness so aim "sticks" more (higher sensitivity = stickier)
-    local sticky = aa and aa.StickyAim and aa.StickyAim.Enabled
-    if sticky and distance < 200 then
-        local stickySens = (aa.StickyAim.Sensitivity or 50) / 100
-        local stickRadius = 120
-        local onTargetFactor = 1 - math.min(distance / stickRadius, 1) -- 1 when on target, 0 when far
-        local stickyMult = 1 - onTargetFactor * stickySens * 0.85 -- reduce smoothness by up to 85% when on target
-        adjustedSmoothness = adjustedSmoothness * math.max(stickyMult, 0.15)
-    end
-    -- Clamp smoothness to reasonable values
-    adjustedSmoothness = math.clamp(adjustedSmoothness, 0.001, 1)
-    
-    -- Use the same smoothness in first and third person: slider value only, no close-range or first-person override
-    local lerpFactor = adjustedSmoothness
-    -- Minimum so that at very high slider (98+) we still make progress and don't get stuck
-    local minLerp = 0.008
-    lerpFactor = math.max(lerpFactor, minLerp)
+    -- Smoothness: slider 1 = snappy (lerp 1), 100 = max smooth (lerp 0.005). Stored value is lerp factor.
+    local lerpFactor = math.clamp((aa and aa.Smoothness) or 0.2, 0.005, 1)
     local smoothedPos = currentCursorPos + (delta * lerpFactor)
     
     -- Calculate the movement delta from current position to smoothed position
@@ -8704,8 +8742,8 @@ local function updateCamera()
     end
     
     local aa = getConfig() and getConfig().AimAssist
-    local baseSmoothness = (aa and aa.Smoothness) or 0.012
-    local easingFunc = getEasingFunction((aa and aa.EasingStyle) or "Linear", (aa and aa.EasingDirection) or "Out")
+    -- Smoothness: slider 1 = snappy (lerp 1), 100 = max smooth (lerp 0.005). Stored value is lerp factor.
+    local lerpFactor = math.clamp((aa and aa.Smoothness) or 0.2, 0.005, 1)
     
     -- Apply deadzone check: check screen distance from cursor to target
     -- DeadzoneAmount is the radius in pixels where camera won't move
@@ -8745,41 +8783,8 @@ local function updateCamera()
         return
     end
     
-    local normalizedAngle = math.min(angle / math.pi, 1) -- 0 to 1 range (0 = aligned, 1 = 180 degrees)
-    
     local goal = CFrame.lookAt(camera.CFrame.Position, pos)
-    
-    -- Apply easing function to the normalized angle to get eased smoothness
-    -- The easing function modifies how aggressive the camera movement is based on distance
-    local easedFactor = easingFunc(normalizedAngle)
-    
-    -- Scale smoothness based on easing style; then apply distance scale (0 = linear, 100 = full distance-based effect)
-    local easingStyle = (aa and aa.EasingStyle) or "Linear"
-    local easingDirection = (aa and aa.EasingDirection) or "Out"
-    local distanceAdjustedSmoothness = baseSmoothness
-    if easingStyle == "Linear" then
-        distanceAdjustedSmoothness = baseSmoothness
-    elseif easingDirection == "In" then
-        distanceAdjustedSmoothness = baseSmoothness * (0.3 + easedFactor * 1.4)
-    elseif easingDirection == "Out" then
-        distanceAdjustedSmoothness = baseSmoothness * (1.7 - easedFactor * 0.7)
-    elseif easingDirection == "InOut" then
-        local midPoint = 0.5
-        local distanceFromMid = math.abs(normalizedAngle - midPoint) / midPoint
-        distanceAdjustedSmoothness = baseSmoothness * (0.6 + (1 - distanceFromMid) * 0.8)
-    end
-    local adjustedSmoothness = math.clamp(distanceAdjustedSmoothness, 0.001, 1)
-    -- Sticky aim: when camera is already close to target, reduce smoothness so aim sticks more
-    local sticky = aa and aa.StickyAim and aa.StickyAim.Enabled
-    if sticky and normalizedAngle < 0.25 then
-        local stickySens = (aa.StickyAim.Sensitivity or 50) / 100
-        local stickAngleRadius = 0.12 -- ~7 degrees
-        local onTargetFactor = 1 - math.min(normalizedAngle / stickAngleRadius, 1)
-        local stickyMult = 1 - onTargetFactor * stickySens * 0.85
-        adjustedSmoothness = adjustedSmoothness * math.max(stickyMult, 0.15)
-        adjustedSmoothness = math.clamp(adjustedSmoothness, 0.001, 1)
-    end
-    camera.CFrame = camera.CFrame:Lerp(goal, adjustedSmoothness)
+    camera.CFrame = camera.CFrame:Lerp(goal, lerpFactor)
 end
 
 -- silent aim
@@ -8808,11 +8813,7 @@ local function checkAntiCurve(targetPos)
     local angularDistance = 0
     local mode = ac.Mode or "3D"
     
-    if mode == "1:1" then
-        -- 1:1: Only redirect when aim is on target (strict). Uses 3D angle; keep Angular Curve low (e.g. 0.5–1) for strict.
-        local dot = math.clamp(cameraDirection:Dot(targetDirection), -1, 1)
-        angularDistance = math.deg(math.acos(dot))
-    elseif mode == "2D" then
+    if mode == "2D" then
         -- 2D mode: Only consider horizontal plane (X and Z components)
         local cameraDir2D = Vector3.new(cameraDirection.X, 0, cameraDirection.Z)
         local targetDir2D = Vector3.new(targetDirection.X, 0, targetDirection.Z)
@@ -8844,10 +8845,6 @@ local function checkAntiCurve(targetPos)
     
     -- Check if angular distance is within threshold
     local maxAngle = ac.AngularCurve or 6.0
-    if mode == "1:1" then
-        -- 1:1 = only when aim is on target; cap at 1.5° so it stays strict
-        maxAngle = math.min(maxAngle, 1.5)
-    end
     return angularDistance <= maxAngle
 end
 
@@ -9086,7 +9083,7 @@ local ANTI_AIM_VIEWER_WRITE = {
     [105305881594005] = { remote = "MainRemoteEvent", parentName = "MainRemotes", eventArg1 = "DEAHOODMOUSEPOSx3^3" },
     [98343466176190] = { remote = "MainRemoteEvent", parentName = "Remotes", eventArg1 = "Z3eHooDMSOUEPoS233^+" },
     [129449254792324] = { remote = "MainEvent", eventArg1 = "b8bbd5d73" },
-    [120372694005244] = { remote = "MainEvent", eventArg1 = "UpdateMousePos" },
+    [75944832659138] = { remote = "MainEvent", eventArg1 = "UpdateMousePos" },
     [110917236678062] = { remote = "MAINEVENT", eventArg1 = "MOUSE" },
     [130879446158509] = { remote = "MAINEVENT", eventArg1 = "MOUSE" },
 }
@@ -9456,13 +9453,41 @@ movementConn = track(RunService.Heartbeat, function(dt)
     if not char then return end
     local humanoid = char:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
+    local myRoot = char:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
     local speedType = Movement.SpeedType or "WalkSpeed"
-    local isVelocity = (speedType == "CFrame" or speedType == "Velocity")
-    if isVelocity then
-        local myRoot = char:FindFirstChild("HumanoidRootPart")
-        if not myRoot then return end
-        local speed = Movement.CFrameSpeed or 200
+    local multiplier = Movement.CFrameSpeed or 200
+    if speedType == "CFrame" then
+        -- Use original JumpPower so jump isn't boosted (Movement.JumpPower is for Walkspeed mode only)
+        local jp = (type(originalJumpPower) == "number" and originalJumpPower >= 0) and originalJumpPower or DEFAULT_JUMPPOWER
+        pcall(function() if humanoid.JumpPower then humanoid.JumpPower = jp end end)
+        pcall(function() if humanoid.JumpHeight then humanoid.JumpHeight = jp / 10 end end)
+        -- WalkSpeed so game sets MoveDirection; give horizontal velocity so run/walk animations play
         humanoid.WalkSpeed = 16
+        local moveDir = humanoid.MoveDirection
+        local flat = Vector3.new(moveDir.X, 0, moveDir.Z)
+        local vy = myRoot.Velocity.Y
+        if myRoot.AssemblyLinearVelocity then vy = myRoot.AssemblyLinearVelocity.Y end
+        local animSpeed = 16
+        if flat.Magnitude > 0.01 then
+            local u = flat.Unit
+            -- Set velocity so animator sees movement and plays run/walk
+            myRoot.Velocity = Vector3.new(u.X * animSpeed, vy, u.Z * animSpeed)
+            if myRoot.AssemblyLinearVelocity then
+                myRoot.AssemblyLinearVelocity = Vector3.new(u.X * animSpeed, vy, u.Z * animSpeed)
+            end
+            -- CFrame move: (multiplier - animSpeed) so total speed = multiplier (we don't double-move)
+            local cfSpeed = math.max(0, multiplier - animSpeed)
+            myRoot.CFrame = myRoot.CFrame + (u * dt * cfSpeed)
+        else
+            myRoot.Velocity = Vector3.new(0, vy, 0)
+            if myRoot.AssemblyLinearVelocity then
+                myRoot.AssemblyLinearVelocity = Vector3.new(0, vy, 0)
+            end
+        end
+    elseif speedType == "Velocity" then
+        humanoid.WalkSpeed = 16
+        local speed = multiplier
         local cam = camera.CFrame
         local lookFlat = Vector3.new(cam.LookVector.X, 0, cam.LookVector.Z)
         local rightFlat = Vector3.new(cam.RightVector.X, 0, cam.RightVector.Z)
@@ -9773,6 +9798,18 @@ task.spawn(function()
         end
         if not targetPos or typeof(targetPos) ~= "Vector3" then return oldGetAim(origin) end
         if useCbr and checkAntiCurve and not checkAntiCurve(targetPos) then return oldGetAim(origin) end
+        local ac = getConfig() and getConfig().AntiCurve
+        if ac and ac.Enabled and ac.DontCurveVertically then
+            local ok, mousePos = pcall(getCursorPos)
+            if ok and mousePos then
+                local screenPos, onScreen = camera:WorldToViewportPoint(targetPos)
+                if onScreen then
+                    local ray = camera:ViewportPointToRay(screenPos.X, mousePos.Y)
+                    local dist = (targetPos - origin).Magnitude
+                    targetPos = ray.Origin + ray.Direction * dist
+                end
+            end
+        end
         local dir = targetPos - origin
         if dir.Magnitude < 0.001 then return oldGetAim(origin) end
         return dir.Unit
@@ -10544,6 +10581,44 @@ function initAntiSit()
     end)
 end
 initAntiSit()
+
+-- Anti Trip: disable FallingDown state so you don't trip
+function initAntiTrip()
+    local function applyAntiTrip(char)
+        if not char then return end
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return end
+        if Config.Misc.AntiTrip then
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        else
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+        end
+    end
+
+    track(player.CharacterAdded, function(char)
+        if stopped() then return end
+        if Config.Misc.AntiTrip then
+            applyAntiTrip(char)
+        else
+            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+            if humanoid then humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true) end
+        end
+    end)
+
+    track(RunService.Heartbeat, function()
+        if stopped() then return end
+        local char = player.Character
+        if not char then return end
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return end
+        if Config.Misc.AntiTrip then
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        else
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+        end
+    end)
+end
+initAntiTrip()
 
 -- cleanup
 track(player.CharacterRemoving, function()
