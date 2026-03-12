@@ -4579,7 +4579,7 @@ local Astral = {
 		SelfCharacter = { CharacterEnabled = false, CharacterMaterial = "Plastic", MaterialColor = Color3.new(1, 1, 1), ToolEnabled = false, ToolMaterial = "Plastic", ToolMaterialColor = Color3.new(1, 1, 1) },
 	},
 	Movement = { Enabled = false, WalkSpeed = 0, JumpPower = 0, Keybind = "V", SpeedType = "WalkSpeed", CFrameSpeed = 0 },
-	GunModifications = { NoSpread = { Enabled = false, Amount = 0 }, ClientBulletRedirection = { Enabled = false, Weapons = {"[Revolver]", "[Double-Barrel SG]", "[TacticalShotgun]", "[AR]", "[SMG]", "[AK47]", "[Shotgun]", "[Silencer]", "[SilencerAR]", "[AUG]", "[P90]", "[Rifle]", "[LMG]"} }, Range = { Enabled = false, Value = 0 }, ShootingSlowdown = { Enabled = false, Value = 0 }, Wallbang = { Enabled = false }, RapidFire = { Enabled = false }, AutoFire = { Enabled = false, FireDistance = 200, AlwaysFire = false, FireCooldown = 50 } },
+	GunModifications = { NoSpread = { Enabled = false, Amount = 0 }, ClientBulletRedirection = { Enabled = false, Weapons = {"[Revolver]", "[Double-Barrel SG]", "[TacticalShotgun]", "[AR]", "[SMG]", "[AK47]", "[Shotgun]", "[Silencer]", "[SilencerAR]", "[AUG]", "[P90]", "[Rifle]", "[LMG]"} }, Range = { Enabled = false, Value = 0 }, Wallbang = { Enabled = false }, RapidFire = { Enabled = false }, AutoFire = { Enabled = false, FireDistance = 200, AlwaysFire = false, FireCooldown = 50 } },
 	Rage = { Orbit = { Enabled = false, Style = "Strafe", Distance = 15, Height = 0, Speed = 75 }, SpectateTarget = false, Fly = { Enabled = false, Keybind = "F", Mode = "CFrame", Speed = 0, VerticalSpeed = 0, SpeedMultiplier = 0, NoClip = false }, HitboxExpander = { Enabled = false, Part = "HumanoidRootPart", Size = 0, Visualizer = false, VisualizerTransparency = 0, Color = Color3.new(1, 0, 0), NoCollide = false }, Spinbot = { Enabled = false, Speed = 0 }},
 	Misc = { AntiSit = false, NoJumpCooldown = false, AntiVoid = false, AntiTrip = false },
 	Macro = { Keybind = "Z", Enabled = false, Acceleration = 0.0 },
@@ -4895,9 +4895,6 @@ do
 	local gunRange = rageTab:section({ name = "Gun Range", side = "left" })
 	gunRange:toggle({ name = "Enabled", flag = "gunrange_enabled", default = Config.GunModifications.Range.Enabled, callback = function(v) Config.GunModifications.Range.Enabled = v end })
 	gunRange:slider({ name = "Value (studs)", flag = "gunrange_value", min = 0, max = 30000, default = Config.GunModifications.Range.Value or 500, callback = function(v) Config.GunModifications.Range.Value = v end })
-	local slowdown = rageTab:section({ name = "Shooting Slowdown", side = "right" })
-	slowdown:toggle({ name = "Enabled", flag = "slowdown_enabled", default = Config.GunModifications.ShootingSlowdown.Enabled, callback = function(v) Config.GunModifications.ShootingSlowdown.Enabled = v end })
-	slowdown:slider({ name = "Value", flag = "slowdown_value", min = 0, max = 5, default = Config.GunModifications.ShootingSlowdown.Value or 0, callback = function(v) Config.GunModifications.ShootingSlowdown.Value = v end })
 	local wallbang = rageTab:section({ name = "Wallbang", side = "right" })
 	wallbang:toggle({ name = "Enabled", flag = "wallbang_enabled", default = Config.GunModifications.Wallbang.Enabled, callback = function(v) Config.GunModifications.Wallbang.Enabled = v end })
 	Config.GunModifications.RapidFire = Config.GunModifications.RapidFire or { Enabled = false }
@@ -9562,7 +9559,7 @@ old = hookfunction(math.random, function(...)
     return old(...)
 end)
 
--- Gun modification: Range + ShootingSlowdown (applies to [Revolver], [Double-Barrel SG], [TacticalShotgun])
+-- Gun modification: Range (applies to [Revolver], [Double-Barrel SG], [TacticalShotgun], etc.)
 local GUN_MOD_WEAPON_NAMES = {"[Revolver]", "[Double-Barrel SG]", "[TacticalShotgun]", "[AR]", "[SMG]", "[AK47]", "[Shotgun]", "[Silencer]", "[SilencerAR]", "[AUG]", "[P90]", "[Rifle]", "[LMG]"}
 local function isGunModWeapon(name)
     for _, weaponName in ipairs(GUN_MOD_WEAPON_NAMES) do
@@ -9584,26 +9581,11 @@ local function applyGunRange(tool)
         end
     end
 end
-local function applyGunShootingSlowdown(tool)
-    if not tool or not tool:IsA("Tool") then return end
-    local gm = getConfig() and getConfig().GunModifications
-    local slowdownCfg = gm and gm.ShootingSlowdown
-    if not (slowdownCfg and slowdownCfg.Enabled) then return end
-    if not isGunModWeapon(tool.Name) then return end
-    local slowdown = tool:FindFirstChild("ShootingCooldown")
-    if slowdown and slowdown:IsA("NumberValue") then
-        local value = slowdownCfg.Value
-        if type(value) == "number" then
-            pcall(function() slowdown.Value = value end)
-        end
-    end
-end
 local function applyGunModsToContainer(container)
     if not container then return end
     for _, child in ipairs(container:GetChildren()) do
         if child:IsA("Tool") then
             applyGunRange(child)
-            applyGunShootingSlowdown(child)
         end
     end
 end
@@ -9622,7 +9604,6 @@ if backpack then
     backpack.ChildAdded:Connect(function(child)
         if child:IsA("Tool") then
             applyGunRange(child)
-            applyGunShootingSlowdown(child)
         end
     end)
 end
