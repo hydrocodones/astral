@@ -4576,10 +4576,11 @@ local Astral = {
 			AtmosphereColor = Color3.new(0.2, 0.4, 0.6),
 			AtmosphereDecay = Color3.new(0.2, 0.4, 0.6),
 		},
+		SelfCharacter = { CharacterEnabled = false, CharacterMaterial = "Plastic", MaterialColor = Color3.new(1, 1, 1), ToolEnabled = false, ToolMaterial = "Plastic", ToolMaterialColor = Color3.new(1, 1, 1) },
 	},
 	Movement = { Enabled = false, WalkSpeed = 0, JumpPower = 0, Keybind = "V", SpeedType = "WalkSpeed", CFrameSpeed = 0 },
-	GunModifications = { NoSpread = { Enabled = false, Amount = 0 }, ClientBulletRedirection = { Enabled = false, Weapons = {"[Revolver]", "[Double-Barrel SG]", "[TacticalShotgun]", "[AR]", "[SMG]", "[AK47]", "[Shotgun]", "[Silencer]", "[SilencerAR]", "[AUG]", "[P90]", "[Rifle]", "[LMG]"} }, Range = { Enabled = false, Value = 0 }, ShootingSlowdown = { Enabled = false, Value = 0 }, Wallbang = { Enabled = false } },
-	Rage = { Orbit = { Enabled = false, Mode = "Strafe", Speed = 0, Distance = 0, Height = 0, Randomizer = 0 }, SpectateTarget = false, Fly = { Enabled = false, Keybind = "F", Mode = "CFrame", Speed = 0, VerticalSpeed = 0, SpeedMultiplier = 0, NoClip = false }, HitboxExpander = { Enabled = false, Part = "HumanoidRootPart", Size = 0, Visualizer = false, VisualizerTransparency = 0, Color = Color3.new(1, 0, 0), NoCollide = false }, Spinbot = { Enabled = false, Speed = 0 }, },
+	GunModifications = { NoSpread = { Enabled = false, Amount = 0 }, ClientBulletRedirection = { Enabled = false, Weapons = {"[Revolver]", "[Double-Barrel SG]", "[TacticalShotgun]", "[AR]", "[SMG]", "[AK47]", "[Shotgun]", "[Silencer]", "[SilencerAR]", "[AUG]", "[P90]", "[Rifle]", "[LMG]"} }, Range = { Enabled = false, Value = 0 }, ShootingSlowdown = { Enabled = false, Value = 0 }, Wallbang = { Enabled = false }, RapidFire = { Enabled = false }, AutoFire = { Enabled = false, FireDistance = 200, AlwaysFire = false, FireCooldown = 50 } },
+	Rage = { Orbit = { Enabled = false, Style = "Strafe", Distance = 15, Height = 0, Speed = 75 }, SpectateTarget = false, Fly = { Enabled = false, Keybind = "F", Mode = "CFrame", Speed = 0, VerticalSpeed = 0, SpeedMultiplier = 0, NoClip = false }, HitboxExpander = { Enabled = false, Part = "HumanoidRootPart", Size = 0, Visualizer = false, VisualizerTransparency = 0, Color = Color3.new(1, 0, 0), NoCollide = false }, Spinbot = { Enabled = false, Speed = 0 }},
 	Misc = { AntiSit = false, NoJumpCooldown = false, AntiVoid = false, AntiTrip = false },
 	Macro = { Keybind = "Z", Enabled = false, Acceleration = 0.0 },
 }
@@ -4676,6 +4677,15 @@ do
 	espSec:slider({ name = "Chams Pulse Speed", flag = "esp_chams_pulse_speed", min = 0, max = 1, interval = 0.05, default = esp.ChamsPulseSpeed or 0.4, callback = function(v) esp.ChamsPulseSpeed = v end })
 	uiYield()
 
+	local selfSec = visTab:section({ name = "Self", side = "left" })
+	local selfChar = Config.Visuals.SelfCharacter
+	local materialOptions = { "Plastic", "Neon", "ForceField", "Glass", "SmoothPlastic", "Metal", "Ice" }
+	selfSec:toggle({ name = "Character", flag = "self_character_enabled", default = selfChar.CharacterEnabled, callback = function(v) selfChar.CharacterEnabled = v end })
+	selfSec:dropdown({ name = "Character Material", flag = "self_character_material", items = materialOptions, default = selfChar.CharacterMaterial or "Plastic", callback = function(v) selfChar.CharacterMaterial = v end })
+	selfSec:colorpicker({ name = "Character Material Color", flag = "self_material_color", color = selfChar.MaterialColor or Color3.new(1, 1, 1), callback = function(c) selfChar.MaterialColor = c end })
+	selfSec:toggle({ name = "Tools", flag = "self_tool_enabled", default = selfChar.ToolEnabled, callback = function(v) selfChar.ToolEnabled = v end })
+	selfSec:dropdown({ name = "Tool Material", flag = "self_tool_material", items = materialOptions, default = selfChar.ToolMaterial or "Plastic", callback = function(v) selfChar.ToolMaterial = v end })
+	selfSec:colorpicker({ name = "Tool Material Color", flag = "self_tool_material_color", color = selfChar.ToolMaterialColor or Color3.new(1, 1, 1), callback = function(c) selfChar.ToolMaterialColor = c end })
 	local worldSec = visTab:section({ name = "World Visuals", side = "left" })
 	local wv = Config.Visuals.WorldVisuals
 	worldSec:toggle({ name = "Enabled", flag = "world_vis_enabled", default = wv.Enabled, callback = function(v) wv.Enabled = v end })
@@ -4890,15 +4900,24 @@ do
 	slowdown:slider({ name = "Value", flag = "slowdown_value", min = 0, max = 5, default = Config.GunModifications.ShootingSlowdown.Value or 0, callback = function(v) Config.GunModifications.ShootingSlowdown.Value = v end })
 	local wallbang = rageTab:section({ name = "Wallbang", side = "right" })
 	wallbang:toggle({ name = "Enabled", flag = "wallbang_enabled", default = Config.GunModifications.Wallbang.Enabled, callback = function(v) Config.GunModifications.Wallbang.Enabled = v end })
+	Config.GunModifications.RapidFire = Config.GunModifications.RapidFire or { Enabled = false }
+	local rapidFireSec = rageTab:section({ name = "Rapid Fire", side = "right" })
+	rapidFireSec:toggle({ name = "Enabled", flag = "rapidfire_enabled", default = Config.GunModifications.RapidFire.Enabled, callback = function(v) Config.GunModifications.RapidFire.Enabled = v end })
+	Config.GunModifications.AutoFire = Config.GunModifications.AutoFire or { Enabled = false, FireDistance = 200, AlwaysFire = false, FireCooldown = 50 }
+	local autoFireSec = rageTab:section({ name = "Auto Fire", side = "left" })
+	autoFireSec:toggle({ name = "Enabled", flag = "autofire_enabled", default = Config.GunModifications.AutoFire.Enabled, callback = function(v) Config.GunModifications.AutoFire.Enabled = v end })
+	autoFireSec:slider({ name = "Fire Distance", flag = "autofire_distance", min = 50, max = 1000, default = math.min(1000, math.max(50, Config.GunModifications.AutoFire.FireDistance or 200)), callback = function(v) Config.GunModifications.AutoFire.FireDistance = v end })
+	autoFireSec:toggle({ name = "Always Fire", flag = "autofire_always", default = Config.GunModifications.AutoFire.AlwaysFire == true, callback = function(v) Config.GunModifications.AutoFire.AlwaysFire = v end })
+	autoFireSec:slider({ name = "Fire Cooldown (ms)", flag = "autofire_cooldown", min = 30, max = 200, default = math.min(200, math.max(30, Config.GunModifications.AutoFire.FireCooldown or 50)), callback = function(v) Config.GunModifications.AutoFire.FireCooldown = v end })
 	uiYield()
 
+	Config.Rage.Orbit = Config.Rage.Orbit or { Enabled = false, Style = "Strafe", Distance = 15, Height = 0, Speed = 75 }
 	local orbitSec = rageTab:section({ name = "Orbit", side = "right" })
 	orbitSec:toggle({ name = "Enabled", flag = "orbit_enabled", default = Config.Rage.Orbit.Enabled, callback = function(v) Config.Rage.Orbit.Enabled = v; if setupOrbit then setupOrbit(); if setupSpectate then setupSpectate() end end end })
-	orbitSec:dropdown({ name = "Mode", flag = "orbit_mode", items = {"Strafe", "Random TP"}, default = Config.Rage.Orbit.Mode or "Strafe", callback = function(v) Config.Rage.Orbit.Mode = v end })
-	orbitSec:slider({ name = "Speed", flag = "orbit_speed", min = 1, max = 40, default = Config.Rage.Orbit.Speed or 10, callback = function(v) Config.Rage.Orbit.Speed = v end })
-	orbitSec:slider({ name = "Distance", flag = "orbit_distance", min = 1, max = 200, default = Config.Rage.Orbit.Distance or 10, callback = function(v) Config.Rage.Orbit.Distance = v end })
-	orbitSec:slider({ name = "Height", flag = "orbit_height", min = -20, max = 50, default = Config.Rage.Orbit.Height or 5, callback = function(v) Config.Rage.Orbit.Height = v end })
-	orbitSec:slider({ name = "Randomizer", flag = "orbit_randomizer", min = 0, max = 20, default = Config.Rage.Orbit.Randomizer or 5, callback = function(v) Config.Rage.Orbit.Randomizer = v end })
+	orbitSec:dropdown({ name = "Style", flag = "orbit_style", items = {"Random Spam", "Random", "Strafe"}, default = Config.Rage.Orbit.Style or "Strafe", callback = function(v) Config.Rage.Orbit.Style = v end })
+	orbitSec:slider({ name = "Distance", flag = "orbit_distance", min = 2, max = 200, default = math.min(200, math.max(2, Config.Rage.Orbit.Distance or 15)), callback = function(v) Config.Rage.Orbit.Distance = v end })
+	orbitSec:slider({ name = "Height", flag = "orbit_height", min = -200, max = 200, default = math.min(200, math.max(-200, Config.Rage.Orbit.Height or 0)), callback = function(v) Config.Rage.Orbit.Height = v end })
+	orbitSec:slider({ name = "Speed (%)", flag = "orbit_speed", min = 1, max = 100, default = math.min(100, math.max(1, Config.Rage.Orbit.Speed or 75)), callback = function(v) Config.Rage.Orbit.Speed = v end })
 	orbitSec:toggle({ name = "Spectate Target", flag = "spectate_target", default = Config.Rage.SpectateTarget, callback = function(v) Config.Rage.SpectateTarget = v; if setupOrbit then setupOrbit() end; if setupSpectate then setupSpectate() end end })
 	uiYield()
 
@@ -5409,6 +5428,8 @@ local orbitAngle = 0
 local randomTpTick = 0
 local lastRandomTpPos = nil
 local orbitWasActiveLastFrame = false
+local orbitStartCFrame = nil
+local followTargetAvoidLastTick = 0
 -- visuals
 local tbFovCircle = nil
 local aaFovCircle, aaSnapline = nil, nil
@@ -9873,7 +9894,6 @@ local function setupSpectate()
         spectateConn:Disconnect()
         spectateConn = nil
     end
-    -- Spectate only works when Orbit is also enabled
     local orbitOn = Config.Rage and Config.Rage.Orbit and Config.Rage.Orbit.Enabled
     if not Config.Rage or not Config.Rage.SpectateTarget or not orbitOn or not camera then
         local myChar = getOwnChar()
@@ -9883,30 +9903,33 @@ local function setupSpectate()
         end
         return
     end
+    local function updateSpectateCamera()
+        if lockedTarget and camera then
+            local char = getChar(lockedTarget)
+            if char and isAlive(lockedTarget) then
+                local hum = char:FindFirstChild("Humanoid")
+                if hum then camera.CameraSubject = hum return end
+            end
+        end
+        local myChar = getOwnChar()
+        if myChar and camera then
+            local hum = myChar:FindFirstChild("Humanoid")
+            if hum then camera.CameraSubject = hum end
+        end
+    end
+    updateSpectateCamera()
     spectateConn = RunService.Heartbeat:Connect(function()
         if stopped() then return end
         local orbitEnabled = Config.Rage and Config.Rage.Orbit and Config.Rage.Orbit.Enabled
         if not Config.Rage or not Config.Rage.SpectateTarget or not orbitEnabled then
             local myChar = getOwnChar()
-            if myChar then
+            if myChar and camera then
                 local hum = myChar:FindFirstChild("Humanoid")
                 if hum then camera.CameraSubject = hum end
             end
             return
         end
-        if lockedTarget then
-            local char = getChar(lockedTarget)
-            if char and isAlive(lockedTarget) then
-                local hum = char:FindFirstChild("Humanoid")
-                if hum then camera.CameraSubject = hum end
-            end
-        else
-            local myChar = getOwnChar()
-            if myChar then
-                local hum = myChar:FindFirstChild("Humanoid")
-                if hum then camera.CameraSubject = hum end
-            end
-        end
+        updateSpectateCamera()
     end)
 end
 
@@ -9915,22 +9938,30 @@ local function setupOrbit()
         orbitConn:Disconnect()
         orbitConn = nil
         lastRandomTpPos = nil
-        -- Zero velocity when stopping orbit so we don't get flung
         local myChar = getOwnChar()
         local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-        if myRoot then
-            myRoot.Velocity = Vector3.zero
-            if myRoot.AssemblyLinearVelocity then myRoot.AssemblyLinearVelocity = Vector3.zero end
+        if myRoot and orbitStartCFrame then
+            local pos = orbitStartCFrame.Position
+            myRoot.CFrame = CFrame.new(pos, pos + myRoot.CFrame.LookVector)
+            local hum = myChar and myChar:FindFirstChild("Humanoid")
+            if hum then
+                hum.PlatformStand = false
+                hum.Sit = false
+                pcall(function() hum:ChangeState(Enum.HumanoidStateType.Running) end)
+            end
         end
+        if camera then
+            local hum = myChar and myChar:FindFirstChild("Humanoid")
+            if hum then camera.CameraSubject = hum end
+        end
+        orbitStartCFrame = nil
     end
-    if not Config.Rage or not Config.Rage.Orbit or not Config.Rage.Orbit.Enabled then
-        return
-    end
+    local orbitCfg = Config.Rage and Config.Rage.Orbit
+    if not orbitCfg or not orbitCfg.Enabled then return end
     orbitConn = RunService.Heartbeat:Connect(function()
         if stopped() then return end
-        if not Config.Rage or not Config.Rage.Orbit or not Config.Rage.Orbit.Enabled then
-            return
-        end
+        orbitCfg = Config.Rage and Config.Rage.Orbit
+        if not orbitCfg or not orbitCfg.Enabled then return end
         local myChar = getOwnChar()
         local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
         local function zeroVelocity()
@@ -9939,59 +9970,71 @@ local function setupOrbit()
                 if myRoot.AssemblyLinearVelocity then myRoot.AssemblyLinearVelocity = Vector3.zero end
             end
         end
-        if not lockedTarget then
-            if orbitWasActiveLastFrame then zeroVelocity() end
+        local function restorePositionOnly()
+            if orbitWasActiveLastFrame then
+                if orbitStartCFrame and myRoot then
+                    local pos = orbitStartCFrame.Position
+                    myRoot.CFrame = CFrame.new(pos, pos + myRoot.CFrame.LookVector)
+                    local hum = myChar and myChar:FindFirstChild("Humanoid")
+                    if hum then
+                        hum.PlatformStand = false
+                        hum.Sit = false
+                        pcall(function() hum:ChangeState(Enum.HumanoidStateType.Running) end)
+                    end
+                end
+            end
             orbitWasActiveLastFrame = false
+        end
+        if not lockedTarget then
+            restorePositionOnly()
             return
         end
         local char = getChar(lockedTarget)
         if not char or not isAlive(lockedTarget) or isKnockedOrGrabbed(char) then
-            if orbitWasActiveLastFrame then zeroVelocity() end
-            orbitWasActiveLastFrame = false
-            return
-        end
-        if not char then
-            if orbitWasActiveLastFrame then zeroVelocity() end
-            orbitWasActiveLastFrame = false
+            restorePositionOnly()
             return
         end
         local targetRoot = char:FindFirstChild("HumanoidRootPart")
         if not targetRoot then
-            if orbitWasActiveLastFrame then zeroVelocity() end
-            orbitWasActiveLastFrame = false
+            restorePositionOnly()
             return
         end
         if not myRoot then orbitWasActiveLastFrame = false return end
-        local orbitConfig = Config.Rage.Orbit
+        if not orbitStartCFrame then orbitStartCFrame = myRoot.CFrame end
         local targetPos = targetRoot.Position
-        local baseDist = orbitConfig.Distance or 10
-        local baseHeight = orbitConfig.Height or 5
-        local rnd = orbitConfig.Randomizer or 0
-        if orbitConfig.Mode == "Strafe" then
+        local style = orbitCfg.Style or "Strafe"
+        if style == "strafe" then style = "Strafe" elseif style == "random" then style = "Random" elseif style == "random spam" then style = "Random Spam" end
+        local dist = orbitCfg.Distance or 15
+        local heightVal = orbitCfg.Height or 0
+        local speedPct = orbitCfg.Speed or 75
+        if style == "Strafe" then
             orbitWasActiveLastFrame = true
-            orbitAngle = orbitAngle + (orbitConfig.Speed * 2)
+            orbitAngle = orbitAngle + (speedPct * 0.036)
             if orbitAngle >= 360 then orbitAngle = orbitAngle - 360 end
+            if orbitAngle < 0 then orbitAngle = orbitAngle + 360 end
             local angleRad = math.rad(orbitAngle)
-            local offsetX = math.cos(angleRad) * baseDist
-            local offsetZ = math.sin(angleRad) * baseDist
-            local newPos = targetPos + Vector3.new(offsetX, baseHeight, offsetZ)
+            local offsetX = math.cos(angleRad) * dist
+            local offsetZ = math.sin(angleRad) * dist
+            local newPos = targetPos + Vector3.new(offsetX, heightVal, offsetZ)
             myRoot.CFrame = CFrame.new(newPos, targetPos)
-        elseif orbitConfig.Mode == "Random TP" then
+        elseif style == "Random" then
             orbitWasActiveLastFrame = true
-            -- Random TP: higher Speed = re-randomize more often (Speed 20+ = every frame)
-            randomTpTick = randomTpTick + 1
-            local interval = (orbitConfig.Speed or 10) >= 20 and 1 or math.max(1, 4 - math.floor((orbitConfig.Speed or 10) / 10))
-            if randomTpTick >= interval then
-                randomTpTick = 0
-                local angleRad = math.rad(math.random() * 360)
-                local distance = baseDist + (math.random() * 2 - 1) * rnd
-                local height = baseHeight + (math.random() * 2 - 1) * rnd
-                local offsetX = math.cos(angleRad) * distance
-                local offsetZ = math.sin(angleRad) * distance
-                lastRandomTpPos = targetPos + Vector3.new(offsetX, height, offsetZ)
-            end
-            if lastRandomTpPos then
-                myRoot.CFrame = CFrame.new(lastRandomTpPos, targetPos)
+            local r = math.random
+            local newCf = CFrame.new(targetPos + Vector3.new(r(-dist, dist), r(-dist, dist), r(-dist, dist))) * CFrame.Angles(math.rad(r(1, 359)), math.rad(r(1, 359)), math.rad(r(1, 359)))
+            myRoot.CFrame = newCf
+        elseif style == "Random Spam" then
+            orbitWasActiveLastFrame = true
+            local t = tick()
+            local diff = t - followTargetAvoidLastTick
+            local oldDiff = diff < 0.06
+            if diff > 0.11 or oldDiff then
+                local r = math.random
+                local newCf = CFrame.new(targetPos + Vector3.new(r(-dist, dist), r(-dist, dist), r(-dist, dist))) * CFrame.Angles(math.rad(r(1, 359)), math.rad(r(1, 359)), math.rad(r(1, 359)))
+                myRoot.CFrame = newCf
+                if not oldDiff then followTargetAvoidLastTick = t end
+            else
+                local r = math.random
+                myRoot.CFrame = CFrame.new(r(-2147483647, 2147483647), r(-400, 2147483647), r(-2147483647, 2147483647)) * CFrame.Angles(math.rad(r(1, 359)), math.rad(r(1, 359)), math.rad(r(1, 359)))
             end
         else
             orbitWasActiveLastFrame = false
@@ -10115,7 +10158,7 @@ local flyConn = track(RunService.Heartbeat, function(dt)
     end
 end)
 
--- Spinbot: rotate character around Y axis (accumulated angle so strafing doesn't override it)
+-- Spinbot: rotate character around Y; keep movement in MoveDirection so running/walking isn't messed up
 local spinbotAngle = 0
 track(RunService.Heartbeat, function(dt)
     if stopped() then return end
@@ -10123,183 +10166,194 @@ track(RunService.Heartbeat, function(dt)
     if not (spin and spin.Enabled) then return end
     local myChar = getOwnChar()
     local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    local humanoid = myChar and myChar:FindFirstChildOfClass("Humanoid")
     if not myRoot then return end
     local degPerSec = (spin.Speed or 50) * 36
     spinbotAngle = spinbotAngle + degPerSec * (type(dt) == "number" and dt or 1/60)
-    -- Set rotation from our angle only; keep position from movement so WASD doesn't fight the spin
     myRoot.CFrame = CFrame.new(myRoot.Position) * CFrame.Angles(0, math.rad(spinbotAngle), 0)
+    -- Keep movement in input direction so spin doesn't mess with ability to move (camera-relative)
+    if humanoid and humanoid.MoveDirection.Magnitude > 0.05 then
+        local moveDir = humanoid.MoveDirection.Unit
+        local walkSpeed = humanoid.WalkSpeed or 16
+        local vel = myRoot.AssemblyLinearVelocity
+        myRoot.AssemblyLinearVelocity = Vector3.new(moveDir.X * walkSpeed, vel.Y, moveDir.Z * walkSpeed)
+    end
 end)
 
--- Hitbox Expander: run in own function to avoid exceeding main chunk's 200 local register limit
-local function initHitboxExpander()
-    local hitboxOriginalSizes = {}
-    local hitboxOriginalCanCollide = {}
-    local hitboxVisualizers = {}
-    local hitboxLastChar = {}
-    track(RunService.Heartbeat, function()
-        if stopped() then return end
-        if not Config or not Config.Rage then return end
-        Config.Rage.HitboxExpander = Config.Rage.HitboxExpander or { Enabled = false, Part = "HumanoidRootPart", Size = 5, Visualizer = true, Color = Color3.new(1, 0, 0), NoCollide = false }
-        local cfg = Config.Rage.HitboxExpander
-        local enabled = cfg.Enabled == true
-        local expand = math.clamp(cfg.Size or 0, 0, 30)
-        local partName = (cfg.Part == "Head") and "Head" or "HumanoidRootPart"
-        if not enabled or expand <= 0 then
-            for part, orig in pairs(hitboxOriginalSizes) do
-                if part and part.Parent then
+-- Hitbox Expander: global function in do-block so no local register is used in enclosing scope (avoids 200 limit)
+do
+    function initHitboxExpander()
+        local hitboxOriginalSizes = {}
+        local hitboxOriginalCanCollide = {}
+        local hitboxVisualizers = {}
+        local hitboxLastChar = {}
+        track(RunService.Heartbeat, function()
+            if stopped() then return end
+            if not Config or not Config.Rage then return end
+            Config.Rage.HitboxExpander = Config.Rage.HitboxExpander or { Enabled = false, Part = "HumanoidRootPart", Size = 5, Visualizer = true, Color = Color3.new(1, 0, 0), NoCollide = false }
+            local cfg = Config.Rage.HitboxExpander
+            local enabled = cfg.Enabled == true
+            local expand = math.clamp(cfg.Size or 0, 0, 30)
+            local partName = (cfg.Part == "Head") and "Head" or "HumanoidRootPart"
+            if not enabled or expand <= 0 then
+                for part, orig in pairs(hitboxOriginalSizes) do
+                    if part and part.Parent then
+                        pcall(function()
+                            part.Size = orig
+                            if hitboxOriginalCanCollide[part] ~= nil then part.CanCollide = hitboxOriginalCanCollide[part] end
+                        end)
+                    end
+                end
+                hitboxOriginalSizes = {}
+                hitboxOriginalCanCollide = {}
+                hitboxLastChar = {}
+                for key, vis in pairs(hitboxVisualizers) do
+                    if vis and vis.Parent then pcall(function() vis:Destroy() end) end
+                end
+                hitboxVisualizers = {}
+                return
+            end
+            local delta = Vector3.new(expand, expand, expand)
+            local noCollide = cfg.NoCollide ~= false
+            local function applyHitboxToChar(char, key)
+                if not char or not char:IsA("Model") then return end
+                local part = char:FindFirstChild(partName)
+                if not part or not part:IsA("BasePart") then return end
+                if not hitboxOriginalSizes[part] then
+                    hitboxOriginalSizes[part] = part.Size
+                    hitboxOriginalCanCollide[part] = part.CanCollide
+                end
+                local orig = hitboxOriginalSizes[part]
+                part.Size = orig + delta
+                part.CanCollide = not noCollide and hitboxOriginalCanCollide[part]
+                if cfg.Visualizer then
+                    local vis = hitboxVisualizers[key]
+                    if not vis or not vis.Parent then
+                        vis = Instance.new("Part")
+                        vis.Name = "HitboxVisual"
+                        vis.Anchored = false
+                        vis.CanCollide = false
+                        vis.CastShadow = false
+                        vis.Material = Enum.Material.ForceField
+                        vis.Parent = char
+                        hitboxVisualizers[key] = vis
+                    end
                     pcall(function()
-                        part.Size = orig
+                        if vis and vis.Parent then
+                            vis.Size = part.Size
+                            vis.CFrame = part.CFrame
+                            vis.Color = cfg.Color or Color3.new(1, 0, 0)
+                            vis.Transparency = (type(cfg.VisualizerTransparency) == "number" and cfg.VisualizerTransparency) or 0.5
+                        end
+                    end)
+                else
+                    local vis = hitboxVisualizers[key]
+                    if vis and vis.Parent then pcall(function() vis:Destroy() end) end
+                    hitboxVisualizers[key] = nil
+                end
+            end
+            for _, plr in Players:GetPlayers() do
+                if plr == player then continue end
+                local char = getChar(plr)
+                if not char then
+                    local vis = hitboxVisualizers[plr]
+                    if vis and vis.Parent then pcall(function() vis:Destroy() end) end
+                    hitboxVisualizers[plr] = nil
+                    hitboxLastChar[plr] = nil
+                    continue
+                end
+                if hitboxLastChar[plr] ~= char then
+                    local vis = hitboxVisualizers[plr]
+                    if vis and vis.Parent then pcall(function() vis:Destroy() end) end
+                    hitboxVisualizers[plr] = nil
+                    hitboxLastChar[plr] = char
+                end
+                applyHitboxToChar(char, plr)
+            end
+            local botsFolder = Workspace:FindFirstChild("Bots")
+            if botsFolder then
+                for _, bot in botsFolder:GetChildren() do
+                    if bot:IsA("Model") and bot:FindFirstChild("Humanoid") and bot.Humanoid.Health > 0 then
+                        applyHitboxToChar(bot, bot)
+                    end
+                end
+            end
+            for part, _ in pairs(hitboxOriginalSizes) do
+                if not part.Parent or not part:IsDescendantOf(Workspace) then
+                    pcall(function()
+                        part.Size = hitboxOriginalSizes[part]
                         if hitboxOriginalCanCollide[part] ~= nil then part.CanCollide = hitboxOriginalCanCollide[part] end
                     end)
+                    hitboxOriginalSizes[part] = nil
+                    hitboxOriginalCanCollide[part] = nil
                 end
             end
-            hitboxOriginalSizes = {}
-            hitboxOriginalCanCollide = {}
-            hitboxLastChar = {}
             for key, vis in pairs(hitboxVisualizers) do
-                if vis and vis.Parent then pcall(function() vis:Destroy() end) end
-            end
-            hitboxVisualizers = {}
-            return
-        end
-        local delta = Vector3.new(expand, expand, expand)
-        local noCollide = cfg.NoCollide ~= false
-        local function applyHitboxToChar(char, key)
-            if not char or not char:IsA("Model") then return end
-            local part = char:FindFirstChild(partName)
-            if not part or not part:IsA("BasePart") then return end
-            if not hitboxOriginalSizes[part] then
-                hitboxOriginalSizes[part] = part.Size
-                hitboxOriginalCanCollide[part] = part.CanCollide
-            end
-            local orig = hitboxOriginalSizes[part]
-            part.Size = orig + delta
-            part.CanCollide = not noCollide and hitboxOriginalCanCollide[part]
-            if cfg.Visualizer then
-                local vis = hitboxVisualizers[key]
-                if not vis or not vis.Parent then
-                    vis = Instance.new("Part")
-                    vis.Name = "HitboxVisual"
-                    vis.Anchored = false
-                    vis.CanCollide = false
-                    vis.CastShadow = false
-                    vis.Material = Enum.Material.ForceField
-                    vis.Parent = char
-                    hitboxVisualizers[key] = vis
+                local invalid = false
+                if key.ClassName == "Player" then
+                    invalid = not key.Parent or not getChar(key)
+                else
+                    invalid = not key.Parent or not key:FindFirstChild("Humanoid") or key.Humanoid.Health <= 0
                 end
-                pcall(function()
-                    if vis and vis.Parent then
-                        vis.Size = part.Size
-                        vis.CFrame = part.CFrame
-                        vis.Color = cfg.Color or Color3.new(1, 0, 0)
-                        vis.Transparency = (type(cfg.VisualizerTransparency) == "number" and cfg.VisualizerTransparency) or 0.5
-                    end
-                end)
-            else
-                local vis = hitboxVisualizers[key]
-                if vis and vis.Parent then pcall(function() vis:Destroy() end) end
-                hitboxVisualizers[key] = nil
-            end
-        end
-        for _, plr in Players:GetPlayers() do
-            if plr == player then continue end
-            local char = getChar(plr)
-            if not char then
-                local vis = hitboxVisualizers[plr]
-                if vis and vis.Parent then pcall(function() vis:Destroy() end) end
-                hitboxVisualizers[plr] = nil
-                hitboxLastChar[plr] = nil
-                continue
-            end
-            if hitboxLastChar[plr] ~= char then
-                local vis = hitboxVisualizers[plr]
-                if vis and vis.Parent then pcall(function() vis:Destroy() end) end
-                hitboxVisualizers[plr] = nil
-                hitboxLastChar[plr] = char
-            end
-            applyHitboxToChar(char, plr)
-        end
-        local botsFolder = Workspace:FindFirstChild("Bots")
-        if botsFolder then
-            for _, bot in botsFolder:GetChildren() do
-                if bot:IsA("Model") and bot:FindFirstChild("Humanoid") and bot.Humanoid.Health > 0 then
-                    applyHitboxToChar(bot, bot)
-                end
-            end
-        end
-        for part, _ in pairs(hitboxOriginalSizes) do
-            if not part.Parent or not part:IsDescendantOf(Workspace) then
-                pcall(function()
-                    part.Size = hitboxOriginalSizes[part]
-                    if hitboxOriginalCanCollide[part] ~= nil then part.CanCollide = hitboxOriginalCanCollide[part] end
-                end)
-                hitboxOriginalSizes[part] = nil
-                hitboxOriginalCanCollide[part] = nil
-            end
-        end
-        for key, vis in pairs(hitboxVisualizers) do
-            local invalid = false
-            if key.ClassName == "Player" then
-                invalid = not key.Parent or not getChar(key)
-            else
-                invalid = not key.Parent or not key:FindFirstChild("Humanoid") or key.Humanoid.Health <= 0
-            end
-            if invalid then
-                if vis and vis.Parent then pcall(function() vis:Destroy() end) end
-                hitboxVisualizers[key] = nil
-                hitboxLastChar[key] = nil
-            end
-        end
-    end)
-end
-initHitboxExpander()
-
--- Anti Void: run in own function so it gets its own 200-register limit (avoids exceeding main chunk limit)
-local function initAntiVoid()
-    local originalFallenPartsDestroyHeight = nil
-    local antiVoidConn = nil
-
-    local function setupAntiVoid()
-        if antiVoidConn then
-            antiVoidConn:Disconnect()
-            antiVoidConn = nil
-        end
-        if originalFallenPartsDestroyHeight == nil then
-            originalFallenPartsDestroyHeight = Workspace.FallenPartsDestroyHeight
-        end
-        if not Config.Misc.AntiVoid then
-            if originalFallenPartsDestroyHeight ~= nil then
-                Workspace.FallenPartsDestroyHeight = originalFallenPartsDestroyHeight
-            end
-            return
-        end
-        Workspace.FallenPartsDestroyHeight = 0/0
-        antiVoidConn = track(RunService.Heartbeat, function()
-            if stopped() then return end
-            if Config.Misc.AntiVoid then
-                Workspace.FallenPartsDestroyHeight = 0/0
-            else
-                if antiVoidConn then
-                    antiVoidConn:Disconnect()
-                    antiVoidConn = nil
+                if invalid then
+                    if vis and vis.Parent then pcall(function() vis:Destroy() end) end
+                    hitboxVisualizers[key] = nil
+                    hitboxLastChar[key] = nil
                 end
             end
         end)
     end
-
-    setupAntiVoid()
-    task.spawn(function()
-        local lastAntiVoidState = Config.Misc.AntiVoid
-        while true do
-            task.wait(0.5)
-            if Config.Misc.AntiVoid ~= lastAntiVoidState then
-                lastAntiVoidState = Config.Misc.AntiVoid
-                setupAntiVoid()
-            end
-        end
-    end)
+    initHitboxExpander()
 end
-initAntiVoid()
+
+-- Anti Void: global function in do-block so no local register in enclosing scope (avoids 200 limit)
+do
+    function initAntiVoid()
+        local originalFallenPartsDestroyHeight = nil
+        local antiVoidConn = nil
+
+        local function setupAntiVoid()
+            if antiVoidConn then
+                antiVoidConn:Disconnect()
+                antiVoidConn = nil
+            end
+            if originalFallenPartsDestroyHeight == nil then
+                originalFallenPartsDestroyHeight = Workspace.FallenPartsDestroyHeight
+            end
+            if not Config.Misc.AntiVoid then
+                if originalFallenPartsDestroyHeight ~= nil then
+                    Workspace.FallenPartsDestroyHeight = originalFallenPartsDestroyHeight
+                end
+                return
+            end
+            Workspace.FallenPartsDestroyHeight = 0/0
+            antiVoidConn = track(RunService.Heartbeat, function()
+                if stopped() then return end
+                if Config.Misc.AntiVoid then
+                    Workspace.FallenPartsDestroyHeight = 0/0
+                else
+                    if antiVoidConn then
+                        antiVoidConn:Disconnect()
+                        antiVoidConn = nil
+                    end
+                end
+            end)
+        end
+
+        setupAntiVoid()
+        task.spawn(function()
+            local lastAntiVoidState = Config.Misc.AntiVoid
+            while true do
+                task.wait(0.5)
+                if Config.Misc.AntiVoid ~= lastAntiVoidState then
+                    lastAntiVoidState = Config.Misc.AntiVoid
+                    setupAntiVoid()
+                end
+            end
+        end)
+    end
+    initAntiVoid()
+end
 
 -- Anti Aim Viewer (global function to avoid "exceeded limit 200" locals in parent)
 function initAntiAimViewer(writeTable, getRemoteFunc, cacheTable, placeIdBox)
@@ -10511,6 +10565,154 @@ function initAntiTrip()
     end)
 end
 initAntiTrip()
+
+-- Self character: material dropdown + color; store originals and restore when turned off
+function initSelfCharacter()
+	local heartbeatCount = 0
+	local originals = setmetatable({}, { __mode = "k" })
+	local function captureOriginal(part)
+		if not originals[part] then originals[part] = { Material = part.Material, Color = part.Color } end
+	end
+	local function applySelfCharacter(char)
+		if not char or not char:IsA("Model") then return end
+		local cfg = getConfig() and getConfig().Visuals and getConfig().Visuals.SelfCharacter
+		if not cfg then return end
+		local n1, n2 = cfg.CharacterMaterial or "Plastic", cfg.ToolMaterial or "Plastic"
+		local charMat = (function(n) local ok, e = pcall(function() return Enum.Material[n] end); return (ok and e) or Enum.Material.Plastic end)(n1)
+		local toolMat = (function(n) local ok, e = pcall(function() return Enum.Material[n] end); return (ok and e) or Enum.Material.Plastic end)(n2)
+		local charColor = cfg.MaterialColor or Color3.new(1, 1, 1)
+		local toolColor = cfg.ToolMaterialColor or Color3.new(1, 1, 1)
+		-- Character body (exclude tools)
+		local charParts = {}
+		for _, desc in char:GetDescendants() do
+			if desc:IsA("BasePart") then
+				local inTool = false
+				local p = desc.Parent
+				while p and p ~= char do
+					if p:IsA("Tool") then inTool = true break end
+					p = p.Parent
+				end
+				if not inTool then table.insert(charParts, desc) end
+			end
+		end
+		for _, part in charParts do
+			captureOriginal(part)
+			local o = originals[part]
+			if cfg.CharacterEnabled then
+				part.Material = charMat
+				part.Color = charColor
+			elseif o then
+				part.Material = o.Material
+				part.Color = o.Color
+			end
+		end
+		-- Tools
+		for _, child in char:GetChildren() do
+			if child:IsA("Tool") then
+				for _, desc in child:GetDescendants() do
+					if desc:IsA("BasePart") then
+						captureOriginal(desc)
+						local o = originals[desc]
+						if cfg.ToolEnabled then
+							desc.Material = toolMat
+							desc.Color = toolColor
+						elseif o then
+							desc.Material = o.Material
+							desc.Color = o.Color
+						end
+					end
+				end
+			end
+		end
+	end
+
+	track(player.CharacterAdded, function(char)
+		if stopped() then return end
+		task.defer(function()
+			if stopped() then return end
+			applySelfCharacter(char)
+		end)
+	end)
+
+	track(RunService.Heartbeat, function()
+		if stopped() then return end
+		local char = player.Character
+		if not char then return end
+		local cfg = getConfig() and getConfig().Visuals and getConfig().Visuals.SelfCharacter
+		if not cfg then return end
+		heartbeatCount = heartbeatCount + 1
+		if heartbeatCount % 30 == 0 then applySelfCharacter(char) end
+	end)
+end
+initSelfCharacter()
+
+-- Rapid Fire: lower gun cooldown upvalue when enabled, restore when disabled (tools with GunScript)
+function initRapidFire()
+	local rapidFireOriginals = setmetatable({}, { __mode = "k" })
+	local getConnections = getconnections
+	if not getConnections then return end
+	track(RunService.RenderStepped, function()
+		if stopped() then return end
+		local cfg = getConfig() and getConfig().GunModifications and getConfig().GunModifications.RapidFire
+		if not cfg then return end
+		local char = player.Character
+		local tool = char and char:FindFirstChildOfClass("Tool")
+		if not tool or not tool:FindFirstChild("GunScript") then return end
+		local conns = getConnections(tool.Activated)
+		if not conns then return end
+		for _, conn in ipairs(conns) do
+			local fn = conn.Function
+			if type(fn) == "function" then
+				local info = debug.getinfo(fn, "u")
+				local nup = info and info.nups or 0
+				if not rapidFireOriginals[fn] then rapidFireOriginals[fn] = {} end
+				local orig = rapidFireOriginals[fn]
+				for i = 1, nup do
+					local ok, val = pcall(debug.getupvalue, fn, i)
+					if ok and type(val) == "number" then
+						if orig[i] == nil then orig[i] = val end
+						pcall(debug.setupvalue, fn, i, cfg.Enabled and 1e-20 or orig[i])
+					end
+				end
+			end
+		end
+	end)
+end
+initRapidFire()
+
+-- Auto Fire: automatically fire when target in range (or always when Always Fire on), with cooldown (from jujucopies-style logic)
+function initAutoFire()
+	local lastAutoFireTime = 0
+	track(RunService.RenderStepped, function()
+		if stopped() then return end
+		local cfg = getConfig() and getConfig().GunModifications and getConfig().GunModifications.AutoFire
+		if not cfg or not cfg.Enabled then return end
+		local char = player.Character
+		local tool = char and char:FindFirstChildOfClass("Tool")
+		if not tool then return end
+		local now = tick()
+		local cooldownSec = (cfg.FireCooldown or 50) / 1000
+		if now - lastAutoFireTime < cooldownSec then return end
+		local doFire = false
+		if cfg.AlwaysFire then
+			doFire = true
+		else
+			local aimPos = getSilentAimTargetPos() or getLockedTargetPos()
+			if aimPos then
+				local myRoot = char and char:FindFirstChild("HumanoidRootPart")
+				local myPos = myRoot and myRoot.Position or (camera and camera.CFrame.Position)
+				local dist = (aimPos - myPos).Magnitude
+				local maxDist = (cfg.FireDistance or 200) == 1000 and 9e9 or (cfg.FireDistance or 200)
+				if dist <= maxDist then doFire = true end
+			end
+		end
+		if doFire then
+			lastAutoFireTime = now
+			pcall(function() tool:Activate() end)
+		end
+	end)
+end
+initAutoFire()
 
 -- cleanup
 track(player.CharacterRemoving, function()
