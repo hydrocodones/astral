@@ -926,10 +926,6 @@ function library:window(properties)
 		LineJoinMode = Enum.LineJoinMode.Miter,
 	})
 
-	function cfg.preview_corner_boxes(bool)
-		cfg.preview_bounding_box(bool)
-	end
-
 	function cfg.preview_bounding_box(bool)
 		BoxLine2.Enabled = bool
 		box_outline.Visible = bool
@@ -4581,7 +4577,7 @@ local Astral = {
 	Movement = { Enabled = false, WalkSpeed = 0, JumpPower = 0, Keybind = "V", SpeedType = "WalkSpeed", CFrameSpeed = 0 },
 	GunModifications = { NoSpread = { Enabled = false, Amount = 0 }, ClientBulletRedirection = { Enabled = false, Weapons = {"[Revolver]", "[Double-Barrel SG]", "[TacticalShotgun]", "[AR]", "[SMG]", "[AK47]", "[Shotgun]", "[Silencer]", "[SilencerAR]", "[AUG]", "[P90]", "[Rifle]", "[LMG]"} }, Range = { Enabled = false, Value = 0 }, Wallbang = { Enabled = false }, RapidFire = { Enabled = false }, AutoFire = { Enabled = false, FireDistance = 200, AlwaysFire = false, FireCooldown = 50 } },
 	Rage = { Orbit = { Enabled = false, Style = "Strafe", Distance = 15, Height = 0, Speed = 75 }, SpectateTarget = false, Fly = { Enabled = false, Keybind = "F", Mode = "CFrame", Speed = 0, VerticalSpeed = 0, SpeedMultiplier = 0, NoClip = false }, HitboxExpander = { Enabled = false, Part = "HumanoidRootPart", Size = 0, Visualizer = false, VisualizerTransparency = 0, Color = Color3.new(1, 0, 0), NoCollide = false }, Spinbot = { Enabled = false, Speed = 0 }},
-	Misc = { AntiSit = false, NoJumpCooldown = false, AntiVoid = false, AntiTrip = false },
+	Misc = { AntiSit = false, NoJumpCooldown = false, AntiVoid = false },
 	Macro = { Keybind = "Z", Enabled = false, Acceleration = 0.0 },
 }
 
@@ -4618,7 +4614,7 @@ do
 	espSec:toggle({ name = "Enabled", flag = "esp_enabled", default = esp.Enabled, callback = function(v) esp.Enabled = v end })
 	espSec:toggle({ name = "Box", flag = "esp_box", default = esp.Box ~= false, callback = function(v) esp.Box = v end })
 	espSec:slider({ name = "Render Distance", flag = "esp_render_distance", min = 0, max = 50000, default = esp.RenderDistance or 0, callback = function(v) esp.RenderDistance = v end })
-	espSec:dropdown({ name = "Box Type", flag = "esp_box_type", items = {"2D", "3D"}, default = (esp.BoxType == "Both" and "2D") or esp.BoxType, callback = function(v) esp.BoxType = v end })
+	espSec:dropdown({ name = "Box Type", flag = "esp_box_type", items = {"2D", "3D"}, default = (esp.BoxType == "Both" and "2D") or esp.BoxType or "2D", callback = function(v) esp.BoxType = v end })
 	espSec:colorpicker({ name = "Box Color", flag = "esp_box_color", color = esp.BoxColor, callback = function(c) esp.BoxColor = c end })
 	espSec:toggle({ name = "Box Outline", flag = "esp_box_outline", default = esp.BoxOutline ~= false, callback = function(v) esp.BoxOutline = v end })
 	espSec:colorpicker({ name = "Outline Color", flag = "esp_outline_color", color = esp.OutlineColor or Color3.new(1,1,1), callback = function(c) esp.OutlineColor = c end })
@@ -4954,7 +4950,6 @@ do
 	miscSec:toggle({ name = "Anti Sit", flag = "misc_antisit", default = Config.Misc.AntiSit, callback = function(v) Config.Misc.AntiSit = v end })
 	miscSec:toggle({ name = "No Jump Cooldown", flag = "misc_nojump", default = Config.Misc.NoJumpCooldown, callback = function(v) Config.Misc.NoJumpCooldown = v end })
 	miscSec:toggle({ name = "Anti Void", flag = "misc_antivoid", default = Config.Misc.AntiVoid, callback = function(v) Config.Misc.AntiVoid = v end })
-	miscSec:toggle({ name = "Anti Trip", flag = "misc_antitrip", default = Config.Misc.AntiTrip, callback = function(v) Config.Misc.AntiTrip = v end })
 	local macroSec = miscTab:section({ name = "Macro", side = "left" })
 	macroSec:toggle({ name = "Enabled", flag = "macro_enabled", default = Config.Macro.Enabled, callback = function(v) Config.Macro.Enabled = v end })
 	macroSec:keybind({ name = "Keybind", flag = "macro_keybind", display = "Macro", default = Enum.KeyCode[Config.Macro.Keybind and Config.Macro.Keybind:upper() or "Z"], mode = "toggle", callback = function()
@@ -6891,6 +6886,20 @@ local espCache = {} -- [player] = { outline, fillQuad, box3d, highlight, nameTex
 local espAABBCache = {} -- [char] = { parts = {BasePart,...}, numChildren = N } — avoid GetDescendants() every frame
 local espGradientScreenGui = nil -- shared ScreenGui for UIGradient box fill (UE-style rotating gradient)
 local espFontMap = { UI = 0, System = 1, Plex = 2, Monospace = 3 }
+-- Cheap AABB from root+head only (no GetDescendants); use for 2D box to avoid lag
+local function getCharacterAABBCheap(char)
+    if not char or not char:IsA("Model") then return nil, nil end
+    local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+    local head = char:FindFirstChild("Head")
+    if root and root:IsA("BasePart") then
+        local pos, sz = root.Position, root.Size
+        local h = (head and head:IsA("BasePart")) and head.Size.Y * 0.5 or sz.Y * 0.5
+        local minV = Vector3.new(pos.X - sz.X * 0.5, pos.Y - h, pos.Z - sz.Z * 0.5)
+        local maxV = Vector3.new(pos.X + sz.X * 0.5, pos.Y + h * 2, pos.Z + sz.Z * 0.5)
+        return minV, maxV
+    end
+    return nil, nil
+end
 local function getCharacterAABB(char)
     if not char or not char:IsA("Model") then return nil, nil end
 
@@ -6914,15 +6923,15 @@ local function getCharacterAABB(char)
             return Vector3.new(minX, minY, minZ), Vector3.new(maxX, maxY, maxZ)
         end
     else
-        -- Cache miss: limit GetDescendants per frame to avoid lag (use root/head fallback if cache already big)
+        -- Cache miss: limit GetDescendants per frame (use root/head fallback if cache already big)
         local cacheSize = 0
         for _ in next, espAABBCache do cacheSize = cacheSize + 1 end
-        if cacheSize >= 14 then
+        if cacheSize >= 8 then
             -- Skip full rebuild this frame; fall through to root/head fallback below
         else
         local parts = {}
         for _, desc in char:GetDescendants() do
-            if desc:IsA("BasePart") and not desc:FindFirstAncestorOfClass("Tool") then
+            if desc:IsA("BasePart") and not desc:FindFirstAncestorOfClass("Tool") and not desc:FindFirstAncestorOfClass("Accessory") then
                 parts[#parts + 1] = desc
             end
         end
@@ -7076,6 +7085,17 @@ local function ensureEspDrawings(plr, boxType, hasFill, needText, needHealthBar,
         c.healthBarFill.Thickness = 0
         if c.healthBarFill.ZIndex then c.healthBarFill.ZIndex = 2 end
     end
+    if needHealthBar and not c.healthBarFillGrad and (boxType == "2D" or boxType == "3D") then
+        c.healthBarFillGrad = {}
+        for i = 1, 12 do
+            local q = Drawing.new("Quad")
+            q.Visible = false
+            q.Filled = true
+            q.Thickness = 0
+            if q.ZIndex then q.ZIndex = 3 end
+            c.healthBarFillGrad[i] = q
+        end
+    end
     if needHealthBar and not c.healthBarOutline and (boxType == "2D" or boxType == "3D") then
         c.healthBarOutline = {}
         for i = 1, 4 do
@@ -7225,15 +7245,23 @@ local function clearEspPlayer(plr)
     if c.nameText then pcall(function() c.nameText.Visible = false end) end
     if c.toolText then pcall(function() c.toolText.Visible = false end) end
     if c.distanceText then pcall(function() c.distanceText.Visible = false end) end
+    if c.healthText then pcall(function() c.healthText.Visible = false end) end
+    if c.armorText then pcall(function() c.armorText.Visible = false end) end
     if c.tracerLine then pcall(function() c.tracerLine.Visible = false end) end
     if c.tracerOutlineLine then pcall(function() c.tracerOutlineLine.Visible = false end) end
     for _, L in c.skeletonLines or {} do pcall(function() L.Visible = false end) end
     for _, L in c.skeletonOutlineLines or {} do pcall(function() L.Visible = false end) end
 end
--- ESP: cap players and throttle to every 2nd frame to reduce lag
-local ESP_MAX_PLAYERS = 12
+-- ESP: throttle to reduce lag
+local ESP_MAX_PLAYERS = 0
 local espFrameCount = 0
 local espClearedWhenDisabled = false -- only run hide loop once when ESP is off to avoid stutter
+-- ESP perf: recalc at a fixed rate, but DRAW every frame using cached results
+local espLastCalc = 0
+local espCalcIntervalBox = 1/90 -- recalc boxes at ~90hz (higher visual smoothness)
+local espCalcIntervalOther = 1/90
+local espLastList = nil
+local espLastSeen = nil
 track(RunService.RenderStepped, function()
     local espOn = flags and flags.esp_enabled == true
     if not espOn then
@@ -7269,15 +7297,14 @@ track(RunService.RenderStepped, function()
     end
     espClearedWhenDisabled = false
     if stopped() then return end
-    -- Throttle: only run full ESP every 2nd frame (drawings stay visible from previous frame)
-    espFrameCount = espFrameCount + 1
-    if espFrameCount % 2 == 0 then return end
     local vis = getConfig() and getConfig().Visuals
     local esp = vis and vis.ESP
     if not esp then return end
     local now = tick()
     local boxType = (esp.BoxType == "3D" or esp.BoxType == "2D") and esp.BoxType or "2D"
     local doBox = esp.Box ~= false
+    local interval = doBox and espCalcIntervalBox or espCalcIntervalOther
+    local doRecalc = (now - espLastCalc) >= interval or (not espLastList)
     local do2D = doBox and (boxType == "2D")
     local do3D = doBox and (boxType == "3D")
     local doFill = esp.BoxFill and do2D
@@ -7289,50 +7316,50 @@ track(RunService.RenderStepped, function()
     local outlineColor = esp.OutlineColor or boxColor
     local doOutline = esp.BoxOutline ~= false
     local fillTrans = esp.BoxFillTransparency or 0.85
-    -- Name, Tool, Distance: read only from espLabelOn (set solely by each toggle callback) so Tool/Distance never depend on Name
+    -- Name, Tool, Distance: track three independent toggles via espLabelOn
     local doName = espLabelOn.name and (esp.NameType == "Display Name" or esp.NameType == "Username")
     local doTool = espLabelOn.tool
     local doDistance = espLabelOn.distance
     local needText = doName or doTool or doDistance
     local fontName = esp.Font or "UI"
     local fontId = espFontMap[fontName] or 0
-    local seen = {}
+    local seen = doRecalc and {} or (espLastSeen or {})
     local camPos = camera.CFrame.Position
     local camLook = camera.CFrame.LookVector
     pcall(function()
         if not Drawing or type(Drawing.new) ~= "function" then return end
-        local list = {}
-        for _, plr in Players:GetPlayers() do
-            if plr == player then continue end
-            local char = getChar(plr)
-            if not char or not char:FindFirstChild("Humanoid") then
-                clearEspPlayer(plr)
-                continue
+        local list = espLastList or {}
+        if doRecalc then
+            list = {}
+            for _, plr in Players:GetPlayers() do
+                if plr == player then continue end
+                local char = getChar(plr)
+                if not char or not char:FindFirstChild("Humanoid") then
+                    clearEspPlayer(plr)
+                    continue
+                end
+                if char.Humanoid.Health <= 0 then
+                    clearEspPlayer(plr)
+                    continue
+                end
+                local rootPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+                if not rootPart or not rootPart:IsA("BasePart") then continue end
+                local rootPos = rootPart.Position
+                local toChar = (rootPos - camPos).Unit
+                if toChar:Dot(camLook) < -0.15 then continue end
+                local dist = (rootPos - camPos).Magnitude
+                local renderDist = tonumber(flags.esp_render_distance) or tonumber(esp.RenderDistance) or 0
+                if renderDist > 0 and dist > renderDist then continue end
+                -- Player-sized bounds: ignore tools/accessories by using cached BaseParts AABB (no hats/extra)
+                local minV, maxV = getCharacterAABB(char)
+                if not minV or not maxV then continue end
+                list[#list+1] = { plr = plr, char = char, minV = minV, maxV = maxV, rootPos = rootPos, dist = dist }
             end
-            -- Skip dead players: ragdoll breaks GetBoundingBox() and root/head fallback, so the box stretches or appears to fall. Don't draw ESP for dead.
-            if char.Humanoid.Health <= 0 then
-                clearEspPlayer(plr)
-                continue
-            end
-            -- Cheap cull first (one part read): skip AABB for players behind camera or out of range.
-            local rootPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
-            if not rootPart or not rootPart:IsA("BasePart") then continue end
-            local rootPos = rootPart.Position
-            local toChar = (rootPos - camPos).Unit
-            if toChar:Dot(camLook) < -0.15 then continue end
-            local dist = (rootPos - camPos).Magnitude
-            local renderDist = tonumber(flags.esp_render_distance) or tonumber(esp.RenderDistance) or 0
-            if renderDist == 0 then continue end
-            if dist > renderDist then continue end
-            -- Only compute full AABB for players that passed cull (in front, in range).
-            local minV, maxV = getCharacterAABB(char)
-            if not minV or not maxV then continue end
-            local boxCenter = (minV + maxV) * 0.5
-            table.insert(list, { plr = plr, char = char, minV = minV, maxV = maxV, rootPos = boxCenter, dist = dist })
+            table.sort(list, function(a, b) return a.dist < b.dist end)
+            espLastCalc = now
+            espLastList = list
+            espLastSeen = seen
         end
-        table.sort(list, function(a, b) return a.dist < b.dist end)
-        -- Cap to closest N players to avoid lag with many players
-        while #list > ESP_MAX_PLAYERS do table.remove(list) end
         for drawIndex = 1, #list do
             pcall(function()
             local ent = list[drawIndex]
@@ -7345,20 +7372,12 @@ track(RunService.RenderStepped, function()
                 local s, on = camera:WorldToViewportPoint(corners[i])
                 screen[i] = Vector2.new(s.X, s.Y)
             end
-            -- 2D box: use body-part screen bounds (tight rect at any angle); fallback to 3D AABB projection
-            local minSx, minSy, maxSx, maxSy
-            do
-                local pMinSx, pMinSy, pMaxSx, pMaxSy = getCharacterScreenBounds(char)
-                if pMinSx then
-                    minSx, minSy, maxSx, maxSy = pMinSx, pMinSy, pMaxSx, pMaxSy
-                else
-                    minSx, minSy = math.huge, math.huge
-                    maxSx, maxSy = -math.huge, -math.huge
-                    for i = 1, 8 do
-                        minSx = min(minSx, screen[i].X) maxSx = max(maxSx, screen[i].X)
-                        minSy = min(minSy, screen[i].Y) maxSy = max(maxSy, screen[i].Y)
-                    end
-                end
+            -- 2D box: use 8-corners projection (stable size, very cheap)
+            local minSx, minSy = math.huge, math.huge
+            local maxSx, maxSy = -math.huge, -math.huge
+            for i = 1, 8 do
+                minSx = min(minSx, screen[i].X) maxSx = max(maxSx, screen[i].X)
+                minSy = min(minSy, screen[i].Y) maxSy = max(maxSy, screen[i].Y)
             end
             local boxW, boxH = maxSx - minSx, maxSy - minSy
             local vw, vh = camera.ViewportSize.X, camera.ViewportSize.Y
@@ -7379,7 +7398,6 @@ track(RunService.RenderStepped, function()
             maxSy = min(maxSy, vh - margin)
             local doFillThisPlayer = doFill and (drawIndex <= 6)
             -- Show/update text for every drawn player when any of name/tool/distance is enabled (no cap so no player "breaks")
-            local needTextThisPlayer = needText
             c = ensureEspDrawings(plr, boxType, doFillThisPlayer, needText, esp.HealthBar, esp.ArmorBar)
             if c then c.espLastBoxOk = true end
             local screenRoot = camera:WorldToViewportPoint(rootPos)
@@ -7398,9 +7416,9 @@ track(RunService.RenderStepped, function()
             local topY = minSy
             local bottomY = maxSy
             -- Update text in its own pcall so a Drawing error never skips drawing the box.
-            -- Run whenever any label is enabled (do not require name to be on for tool/distance to show).
+            -- Run whenever any label is enabled (name/tool/distance are fully independent).
             pcall(function()
-                if needTextThisPlayer then
+                if doName or doTool or doDistance then
                     local textColor = boxColor
                     local textOutline = esp.TextOutline ~= false
                     local nameType = esp.NameType or "Display Name"
@@ -7486,33 +7504,33 @@ track(RunService.RenderStepped, function()
                 local fillBottom = Vector2.new(fillCx, maxSy)
                 local fillLeft = Vector2.new(minSx, fillCy)
                 if doOutline and c.outlineOuter and c.outlineInner then
-                    -- Outline outside and inside the box
-                    local out = math.max(1, math.ceil(outlineThick))
-                    local oMinSx, oMinSy = minSx - out, minSy - out
-                    local oMaxSx, oMaxSy = maxSx + out, maxSy + out
-                    local otl = Vector2.new(oMinSx, oMinSy)
-                    local otr = Vector2.new(oMaxSx, oMinSy)
-                    local obr = Vector2.new(oMaxSx, oMaxSy)
-                    local obl = Vector2.new(oMinSx, oMaxSy)
-                    c.outlineOuter[1].From = otl c.outlineOuter[1].To = otr c.outlineOuter[1].Visible = true c.outlineOuter[1].Color = outlineColor c.outlineOuter[1].Thickness = outlineThick
-                    c.outlineOuter[2].From = otr c.outlineOuter[2].To = obr c.outlineOuter[2].Visible = true c.outlineOuter[2].Color = outlineColor c.outlineOuter[2].Thickness = outlineThick
-                    c.outlineOuter[3].From = obr c.outlineOuter[3].To = obl c.outlineOuter[3].Visible = true c.outlineOuter[3].Color = outlineColor c.outlineOuter[3].Thickness = outlineThick
-                    c.outlineOuter[4].From = obl c.outlineOuter[4].To = otl c.outlineOuter[4].Visible = true c.outlineOuter[4].Color = outlineColor c.outlineOuter[4].Thickness = outlineThick
-                    -- Inner outline (inset from box edge)
-                    local iMinSx, iMinSy = minSx + out, minSy + out
-                    local iMaxSx, iMaxSy = maxSx - out, maxSy - out
-                    if iMaxSx > iMinSx and iMaxSy > iMinSy then
-                        local itl = Vector2.new(iMinSx, iMinSy)
-                        local itr = Vector2.new(iMaxSx, iMinSy)
-                        local ibr = Vector2.new(iMaxSx, iMaxSy)
-                        local ibl = Vector2.new(iMinSx, iMaxSy)
-                        c.outlineInner[1].From = itl c.outlineInner[1].To = itr c.outlineInner[1].Visible = true c.outlineInner[1].Color = outlineColor c.outlineInner[1].Thickness = outlineThick
-                        c.outlineInner[2].From = itr c.outlineInner[2].To = ibr c.outlineInner[2].Visible = true c.outlineInner[2].Color = outlineColor c.outlineInner[2].Thickness = outlineThick
-                        c.outlineInner[3].From = ibr c.outlineInner[3].To = ibl c.outlineInner[3].Visible = true c.outlineInner[3].Color = outlineColor c.outlineInner[3].Thickness = outlineThick
-                        c.outlineInner[4].From = ibl c.outlineInner[4].To = itl c.outlineInner[4].Visible = true c.outlineInner[4].Color = outlineColor c.outlineInner[4].Thickness = outlineThick
-                    else
-                        for i = 1, 4 do c.outlineInner[i].Visible = false end
-                    end
+                        -- Full outline outside and inside the box
+                        local out = math.max(1, math.ceil(outlineThick))
+                        local oMinSx, oMinSy = minSx - out, minSy - out
+                        local oMaxSx, oMaxSy = maxSx + out, maxSy + out
+                        local otl = Vector2.new(oMinSx, oMinSy)
+                        local otr = Vector2.new(oMaxSx, oMinSy)
+                        local obr = Vector2.new(oMaxSx, oMaxSy)
+                        local obl = Vector2.new(oMinSx, oMaxSy)
+                        c.outlineOuter[1].From = otl c.outlineOuter[1].To = otr c.outlineOuter[1].Visible = true c.outlineOuter[1].Color = outlineColor c.outlineOuter[1].Thickness = outlineThick
+                        c.outlineOuter[2].From = otr c.outlineOuter[2].To = obr c.outlineOuter[2].Visible = true c.outlineOuter[2].Color = outlineColor c.outlineOuter[2].Thickness = outlineThick
+                        c.outlineOuter[3].From = obr c.outlineOuter[3].To = obl c.outlineOuter[3].Visible = true c.outlineOuter[3].Color = outlineColor c.outlineOuter[3].Thickness = outlineThick
+                        c.outlineOuter[4].From = obl c.outlineOuter[4].To = otl c.outlineOuter[4].Visible = true c.outlineOuter[4].Color = outlineColor c.outlineOuter[4].Thickness = outlineThick
+                        -- Inner outline (inset from box edge)
+                        local iMinSx, iMinSy = minSx + out, minSy + out
+                        local iMaxSx, iMaxSy = maxSx - out, maxSy - out
+                        if iMaxSx > iMinSx and iMaxSy > iMinSy then
+                            local itl = Vector2.new(iMinSx, iMinSy)
+                            local itr = Vector2.new(iMaxSx, iMinSy)
+                            local ibr = Vector2.new(iMaxSx, iMaxSy)
+                            local ibl = Vector2.new(iMinSx, iMaxSy)
+                            c.outlineInner[1].From = itl c.outlineInner[1].To = itr c.outlineInner[1].Visible = true c.outlineInner[1].Color = outlineColor c.outlineInner[1].Thickness = outlineThick
+                            c.outlineInner[2].From = itr c.outlineInner[2].To = ibr c.outlineInner[2].Visible = true c.outlineInner[2].Color = outlineColor c.outlineInner[2].Thickness = outlineThick
+                            c.outlineInner[3].From = ibr c.outlineInner[3].To = ibl c.outlineInner[3].Visible = true c.outlineInner[3].Color = outlineColor c.outlineInner[3].Thickness = outlineThick
+                            c.outlineInner[4].From = ibl c.outlineInner[4].To = itl c.outlineInner[4].Visible = true c.outlineInner[4].Color = outlineColor c.outlineInner[4].Thickness = outlineThick
+                        else
+                            for i = 1, 4 do c.outlineInner[i].Visible = false end
+                        end
                 else
                     for i = 1, 4 do if c.outlineOuter then c.outlineOuter[i].Visible = false end end
                     for i = 1, 4 do if c.outlineInner then c.outlineInner[i].Visible = false end end
@@ -7578,6 +7596,7 @@ track(RunService.RenderStepped, function()
                 local hColor = Color3.new(1 - displayRatio, displayRatio, 0.2)
                 local bgColor = Color3.new(0.15, 0.15, 0.15)
                 local bx, by = 0, 0
+                local showHealthText = esp.HealthBarText == true and c.healthText ~= nil
                 local fillStyle = (drawIndex <= 6) and (esp.HealthBarFillStyle or "Gradient") or "Static"
                 -- Smooth blended health bar gradient. Red (bottom) -> orange -> yellow -> green (top). No animation.
                 local function smoothStep(u) return u * u * (3 - 2 * u) end
@@ -7602,8 +7621,6 @@ track(RunService.RenderStepped, function()
                 end
                 local hBarOutlineThick = math.max(0.5, esp.HealthBarOutlineThickness or 0.5)
                 local hBarOutlineColor = esp.HealthBarOutlineColor or outlineColor
-                -- Gradient = single quad with color at current ratio (no segment lines)
-                local fillColor = (fillStyle == "Gradient") and healthBarGradColor(displayRatio) or hColor
                 if pos == "Left" then
                     barW = 2
                     barH = maxSy - minSy
@@ -7634,19 +7651,54 @@ track(RunService.RenderStepped, function()
                     else
                         for i = 1, 4 do if c.healthBarOutline then c.healthBarOutline[i].Visible = false end end
                     end
-                    for _, q in c.healthBarFillGrad or {} do q.Visible = false end
-                    if fillH >= 0.01 then
-                        c.healthBarFill.PointA = Vector2.new(bx, fy)
-                        c.healthBarFill.PointB = Vector2.new(bx + barW, fy)
-                        c.healthBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
-                        c.healthBarFill.PointD = Vector2.new(bx, fy + fillH)
-                        c.healthBarFill.Color = fillColor
-                        c.healthBarFill.Transparency = 1
-                        c.healthBarFill.Filled = true
-                        c.healthBarFill.Thickness = 0
-                        c.healthBarFill.Visible = true
-                    else
+                    local bottomY = by + barH
+                    if fillStyle == "Gradient" and c.healthBarFillGrad then
                         c.healthBarFill.Visible = false
+                        for i = 1, #c.healthBarFillGrad do
+                            local q = c.healthBarFillGrad[i]
+                            local segT0 = (i - 1) / #c.healthBarFillGrad
+                            local segT1 = i / #c.healthBarFillGrad
+                            if fillH <= 0.01 or segT0 >= 1 then
+                                q.Visible = false
+                            else
+                                local y0 = bottomY - fillH * segT0
+                                local y1 = bottomY - fillH * math.min(segT1, 1)
+                                q.PointA = Vector2.new(bx, y1)
+                                q.PointB = Vector2.new(bx + barW, y1)
+                                q.PointC = Vector2.new(bx + barW, y0)
+                                q.PointD = Vector2.new(bx, y0)
+                                q.Color = healthBarGradColor((segT0 + segT1) * 0.5)
+                                q.Transparency = 1
+                                q.Visible = true
+                            end
+                        end
+                    else
+                        for _, q in c.healthBarFillGrad or {} do q.Visible = false end
+                        if fillH >= 0.01 then
+                            c.healthBarFill.PointA = Vector2.new(bx, fy)
+                            c.healthBarFill.PointB = Vector2.new(bx + barW, fy)
+                            c.healthBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
+                            c.healthBarFill.PointD = Vector2.new(bx, fy + fillH)
+                            c.healthBarFill.Color = hColor
+                            c.healthBarFill.Transparency = 1
+                            c.healthBarFill.Filled = true
+                            c.healthBarFill.Thickness = 0
+                            c.healthBarFill.Visible = true
+                        else
+                            c.healthBarFill.Visible = false
+                        end
+                    end
+                    if c.healthText then
+                        if esp.HealthBarText then
+                            c.healthText.Text = tostring(math.floor(health + 0.5))
+                            c.healthText.Color = Color3.new(1,1,1)
+                            c.healthText.Outline = true
+                            c.healthText.OutlineColor = Color3.new(0,0,0)
+                            c.healthText.Position = Vector2.new(bx - 8, by + barH * 0.5)
+                            c.healthText.Visible = true
+                        else
+                            c.healthText.Visible = false
+                        end
                     end
                 elseif pos == "Right" then
                     barW = 2
@@ -7678,19 +7730,54 @@ track(RunService.RenderStepped, function()
                     else
                         for i = 1, 4 do if c.healthBarOutline then c.healthBarOutline[i].Visible = false end end
                     end
-                    for _, q in c.healthBarFillGrad or {} do q.Visible = false end
-                    if fillH >= 0.01 then
-                        c.healthBarFill.PointA = Vector2.new(bx, fy)
-                        c.healthBarFill.PointB = Vector2.new(bx + barW, fy)
-                        c.healthBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
-                        c.healthBarFill.PointD = Vector2.new(bx, fy + fillH)
-                        c.healthBarFill.Color = fillColor
-                        c.healthBarFill.Transparency = 1
-                        c.healthBarFill.Filled = true
-                        c.healthBarFill.Thickness = 0
-                        c.healthBarFill.Visible = true
-                    else
+                    local bottomY = by + barH
+                    if fillStyle == "Gradient" and c.healthBarFillGrad then
                         c.healthBarFill.Visible = false
+                        for i = 1, #c.healthBarFillGrad do
+                            local q = c.healthBarFillGrad[i]
+                            local segT0 = (i - 1) / #c.healthBarFillGrad
+                            local segT1 = i / #c.healthBarFillGrad
+                            if fillH <= 0.01 or segT0 >= 1 then
+                                q.Visible = false
+                            else
+                                local y0 = bottomY - fillH * segT0
+                                local y1 = bottomY - fillH * math.min(segT1, 1)
+                                q.PointA = Vector2.new(bx, y1)
+                                q.PointB = Vector2.new(bx + barW, y1)
+                                q.PointC = Vector2.new(bx + barW, y0)
+                                q.PointD = Vector2.new(bx, y0)
+                                q.Color = healthBarGradColor((segT0 + segT1) * 0.5)
+                                q.Transparency = 1
+                                q.Visible = true
+                            end
+                        end
+                    else
+                        for _, q in c.healthBarFillGrad or {} do q.Visible = false end
+                        if fillH >= 0.01 then
+                            c.healthBarFill.PointA = Vector2.new(bx, fy)
+                            c.healthBarFill.PointB = Vector2.new(bx + barW, fy)
+                            c.healthBarFill.PointC = Vector2.new(bx + barW, fy + fillH)
+                            c.healthBarFill.PointD = Vector2.new(bx, fy + fillH)
+                            c.healthBarFill.Color = hColor
+                            c.healthBarFill.Transparency = 1
+                            c.healthBarFill.Filled = true
+                            c.healthBarFill.Thickness = 0
+                            c.healthBarFill.Visible = true
+                        else
+                            c.healthBarFill.Visible = false
+                        end
+                    end
+                    if c.healthText then
+                        if esp.HealthBarText then
+                            c.healthText.Text = tostring(math.floor(health + 0.5))
+                            c.healthText.Color = Color3.new(1,1,1)
+                            c.healthText.Outline = true
+                            c.healthText.OutlineColor = Color3.new(0,0,0)
+                            c.healthText.Position = Vector2.new(bx + barW + 8, by + barH * 0.5)
+                            c.healthText.Visible = true
+                        else
+                            c.healthText.Visible = false
+                        end
                     end
                 else
                     barW = maxSx - minSx
@@ -7721,19 +7808,53 @@ track(RunService.RenderStepped, function()
                     else
                         for i = 1, 4 do if c.healthBarOutline then c.healthBarOutline[i].Visible = false end end
                     end
-                    for _, q in c.healthBarFillGrad or {} do q.Visible = false end
-                    if fillW >= 0.01 then
-                        c.healthBarFill.PointA = Vector2.new(bx, by)
-                        c.healthBarFill.PointB = Vector2.new(bx + fillW, by)
-                        c.healthBarFill.PointC = Vector2.new(bx + fillW, by + barH)
-                        c.healthBarFill.PointD = Vector2.new(bx, by + barH)
-                        c.healthBarFill.Color = fillColor
-                        c.healthBarFill.Transparency = 1
-                        c.healthBarFill.Filled = true
-                        c.healthBarFill.Thickness = 0
-                        c.healthBarFill.Visible = true
-                    else
+                    if fillStyle == "Gradient" and c.healthBarFillGrad then
                         c.healthBarFill.Visible = false
+                        for i = 1, #c.healthBarFillGrad do
+                            local q = c.healthBarFillGrad[i]
+                            local segT0 = (i - 1) / #c.healthBarFillGrad
+                            local segT1 = i / #c.healthBarFillGrad
+                            if fillW <= 0.01 or segT0 >= 1 then
+                                q.Visible = false
+                            else
+                                local x0 = bx + fillW * segT0
+                                local x1 = bx + fillW * math.min(segT1, 1)
+                                q.PointA = Vector2.new(x0, by)
+                                q.PointB = Vector2.new(x1, by)
+                                q.PointC = Vector2.new(x1, by + barH)
+                                q.PointD = Vector2.new(x0, by + barH)
+                                q.Color = healthBarGradColor((segT0 + segT1) * 0.5)
+                                q.Transparency = 1
+                                q.Visible = true
+                            end
+                        end
+                    else
+                        for _, q in c.healthBarFillGrad or {} do q.Visible = false end
+                        if fillW >= 0.01 then
+                            c.healthBarFill.PointA = Vector2.new(bx, by)
+                            c.healthBarFill.PointB = Vector2.new(bx + fillW, by)
+                            c.healthBarFill.PointC = Vector2.new(bx + fillW, by + barH)
+                            c.healthBarFill.PointD = Vector2.new(bx, by + barH)
+                            c.healthBarFill.Color = hColor
+                            c.healthBarFill.Transparency = 1
+                            c.healthBarFill.Filled = true
+                            c.healthBarFill.Thickness = 0
+                            c.healthBarFill.Visible = true
+                        else
+                            c.healthBarFill.Visible = false
+                        end
+                    end
+                    if c.healthText then
+                        if esp.HealthBarText then
+                            c.healthText.Text = tostring(math.floor(health + 0.5))
+                            c.healthText.Color = Color3.new(1,1,1)
+                            c.healthText.Outline = true
+                            c.healthText.OutlineColor = Color3.new(0,0,0)
+                            c.healthText.Position = Vector2.new(bx + barW * 0.5, by - 10)
+                            c.healthText.Visible = true
+                        else
+                            c.healthText.Visible = false
+                        end
                     end
                 end
             else
@@ -7818,6 +7939,18 @@ track(RunService.RenderStepped, function()
                     else
                         c.armorBarFill.Visible = false
                     end
+                    if c.armorText then
+                        if esp.ArmorBarText then
+                            c.armorText.Text = tostring(math.floor(armorVal + 0.5))
+                            c.armorText.Color = Color3.new(1,1,1)
+                            c.armorText.Outline = true
+                            c.armorText.OutlineColor = Color3.new(0,0,0)
+                            c.armorText.Position = Vector2.new(bx - 8, by + barH * 0.5)
+                            c.armorText.Visible = true
+                        else
+                            c.armorText.Visible = false
+                        end
+                    end
                 elseif pos == "Right" then
                     barW = 2
                     barH = maxSy - minSy
@@ -7862,6 +7995,18 @@ track(RunService.RenderStepped, function()
                     else
                         c.armorBarFill.Visible = false
                     end
+                    if c.armorText then
+                        if esp.ArmorBarText then
+                            c.armorText.Text = tostring(math.floor(armorVal + 0.5))
+                            c.armorText.Color = Color3.new(1,1,1)
+                            c.armorText.Outline = true
+                            c.armorText.OutlineColor = Color3.new(0,0,0)
+                            c.armorText.Position = Vector2.new(bx + barW + 8, by + barH * 0.5)
+                            c.armorText.Visible = true
+                        else
+                            c.armorText.Visible = false
+                        end
+                    end
                 else
                     barW = maxSx - minSx
                     barH = 2
@@ -7904,6 +8049,18 @@ track(RunService.RenderStepped, function()
                         c.armorBarFill.Visible = true
                     else
                         c.armorBarFill.Visible = false
+                    end
+                    if c.armorText then
+                        if esp.ArmorBarText then
+                            c.armorText.Text = tostring(math.floor(armorVal + 0.5))
+                            c.armorText.Color = Color3.new(1,1,1)
+                            c.armorText.Outline = true
+                            c.armorText.OutlineColor = Color3.new(0,0,0)
+                            c.armorText.Position = Vector2.new(bx + barW * 0.5, by - 10)
+                            c.armorText.Visible = true
+                        else
+                            c.armorText.Visible = false
+                        end
                     end
                 end
             else
@@ -8992,6 +9149,7 @@ end
 local ANTI_AIM_VIEWER_WRITE = {
     [105305881594005] = { remote = "MainRemoteEvent", parentName = "MainRemotes", eventArg1 = "DEAHOODMOUSEPOSx3^3" },
     [98343466176190] = { remote = "MainRemoteEvent", parentName = "Remotes", eventArg1 = "Z3eHooDMSOUEPoS233^+" },
+    [93778920465645] = { remote = "MainRemoteEvent", parentName = "Remotes", eventArg1 = "NOPEATALL^+", fixedPos = Vector3.new(-101.42888641357422, 37.05597686767578, -776.2234497070312) },
     [129449254792324] = { remote = "MainEvent", eventArg1 = "b8bbd5d73" },
     [75944832659138] = { remote = "MainEvent", eventArg1 = "UpdateMousePos" },
     [110917236678062] = { remote = "MAINEVENT", eventArg1 = "MOUSE" },
@@ -9066,7 +9224,9 @@ local function startTriggerbot()
         if stopped() or not triggerEnabled or isBlacklistedItemEquipped() then return end
         if isChatFocused() then return end
         local now = tick()
-        if now - lastFireTime < (cfg.Triggerbot.TriggerDelay / 1000) then return end
+        local delayMs = tonumber(flags and flags.tb_delay) or tonumber(cfg.Triggerbot and cfg.Triggerbot.TriggerDelay) or 0
+        local delaySec = (delayMs and delayMs > 0) and (delayMs / 1000) or 0
+        if delaySec > 0 and (now - lastFireTime) < delaySec then return end
         
         local origin = camera.CFrame.Position
         local ray = mouse.UnitRay
@@ -9695,7 +9855,7 @@ task.spawn(function()
         local ac = getConfig() and getConfig().AntiCurve
         if ac and ac.Enabled and ac.DontCurveVertically then
             local ok, mousePos = pcall(getCursorPos)
-            if ok and mousePos then
+            if ok and mousePos and camera then
                 local screenPos, onScreen = camera:WorldToViewportPoint(targetPos)
                 if onScreen then
                     local ray = camera:ViewportPointToRay(screenPos.X, mousePos.Y)
@@ -10042,102 +10202,105 @@ task.spawn(function()
     end
 end)
 
--- Fly: one persistent Heartbeat (same pattern as Movement). Checkbox on = fly on; keybind toggles.
--- Noclip restore cache: [part] = original CanCollide (so we restore all character parts when fly/noclip turns off)
-local flyNoclipRestore = {}
--- CFrame fly: we track position ourselves so gravity can't drift us (Heartbeat runs before physics, so zeroing velocity still lets gravity move the part next frame)
-local flyPosition = nil
-local flyConn = track(RunService.Heartbeat, function(dt)
-    if stopped() then return end
-    if not Config or not Config.Rage then return end
-    -- When orbit is on, skip fly so orbit has full control (opposite of fly-priority)
-    if Config.Rage.Orbit and Config.Rage.Orbit.Enabled and lockedTarget then
-        return
-    end
-    Config.Rage.Fly = Config.Rage.Fly or { Enabled = false, Keybind = "F", Mode = "CFrame", Speed = 50, SpeedMultiplier = 1 }
-    local enabled = Config.Rage.Fly.Enabled == true
-    if not enabled then
-        lastFlyEnabled = false
-        flyPosition = nil
-        for part, orig in pairs(flyNoclipRestore) do
-            if part and part.Parent then pcall(function() part.CanCollide = orig end) end
+-- Fly: wrap in a function so Fly locals don't count toward the main chunk's 200-local limit
+function initFly()
+    -- Noclip restore cache: [part] = original CanCollide (so we restore all character parts when fly/noclip turns off)
+    local flyNoclipRestore = {}
+    -- CFrame fly: we track position ourselves so gravity can't drift us (Heartbeat runs before physics, so zeroing velocity still lets gravity move the part next frame)
+    local flyPosition = nil
+    track(RunService.Heartbeat, function(dt)
+        if stopped() then return end
+        if not Config or not Config.Rage then return end
+        -- When orbit is on, skip fly so orbit has full control (opposite of fly-priority)
+        if Config.Rage.Orbit and Config.Rage.Orbit.Enabled and lockedTarget then
+            return
         end
-        flyNoclipRestore = {}
-        return
-    end
-    -- When user enables Fly checkbox, turn on immediately (like Movement)
-    if enabled and not lastFlyEnabled then flyToggled = true end
-    lastFlyEnabled = true
-    if not flyToggled then
-        flyPosition = nil
-        for part, orig in pairs(flyNoclipRestore) do
-            if part and part.Parent then pcall(function() part.CanCollide = orig end) end
-        end
-        flyNoclipRestore = {}
-        return
-    end
-    local myChar = getOwnChar()
-    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    local cam = camera or Workspace.CurrentCamera
-    if not myRoot or not cam then return end
-    local flyCfg = Config.Rage.Fly
-    -- NoClip: set all character BaseParts to CanCollide = false and cache originals so we can restore
-    if flyCfg.NoClip then
-        for _, desc in ipairs(myChar:GetDescendants()) do
-            if desc:IsA("BasePart") and not flyNoclipRestore[desc] then
-                flyNoclipRestore[desc] = desc.CanCollide
-                desc.CanCollide = false
+        Config.Rage.Fly = Config.Rage.Fly or { Enabled = false, Keybind = "F", Mode = "CFrame", Speed = 50, SpeedMultiplier = 1 }
+        local enabled = Config.Rage.Fly.Enabled == true
+        if not enabled then
+            lastFlyEnabled = false
+            flyPosition = nil
+            for part, orig in pairs(flyNoclipRestore) do
+                if part and part.Parent then pcall(function() part.CanCollide = orig end) end
             end
+            flyNoclipRestore = {}
+            return
         end
-    else
-        for part, orig in pairs(flyNoclipRestore) do
-            if part and part.Parent then pcall(function() part.CanCollide = orig end) end
+        -- When user enables Fly checkbox, turn on immediately (like Movement)
+        if enabled and not lastFlyEnabled then flyToggled = true end
+        lastFlyEnabled = true
+        if not flyToggled then
+            flyPosition = nil
+            for part, orig in pairs(flyNoclipRestore) do
+                if part and part.Parent then pcall(function() part.CanCollide = orig end) end
+            end
+            flyNoclipRestore = {}
+            return
         end
-        flyNoclipRestore = {}
-        myRoot.CanCollide = true
-    end
-    -- CFrame mode: move in camera look direction (W/S = forward/back, A/D = strafe; looking up + W = go up). Velocity mode: same direction, one speed.
-    local lookDir = cam.CFrame.LookVector
-    local rightDir = cam.CFrame.RightVector
-    local move = Vector3.zero
-    if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + lookDir end
-    if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - lookDir end
-    if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + rightDir end
-    if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - rightDir end
-    -- Optional world up/down (so you can still use Space/Shift without pointing camera)
-    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
-    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then move = move - Vector3.new(0, 1, 0) end
-    local mult = flyCfg.SpeedMultiplier or 1
-    local speedVal = (flyCfg.Speed or 50) * mult
-    local verticalSpeedVal = (flyCfg.VerticalSpeed or 50) * mult
-    local totalLen = move.Magnitude
-    local vel
-    if totalLen > 0.001 then
-        move = move.Unit
-        -- Single speed in movement direction (camera-relative); vertical component uses verticalSpeedVal when using Space/Shift only for consistency
-        local useVerticalSpeed = (math.abs(move.Y) > 0.5) and (move.X * move.X + move.Z * move.Z < 0.01)
-        if useVerticalSpeed then
-            vel = Vector3.new(0, (move.Y > 0 and verticalSpeedVal or -verticalSpeedVal), 0)
+        local myChar = getOwnChar()
+        local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        local cam = camera or Workspace.CurrentCamera
+        if not myRoot or not cam then return end
+        local flyCfg = Config.Rage.Fly
+        -- NoClip: set all character BaseParts to CanCollide = false and cache originals so we can restore
+        if flyCfg.NoClip then
+            for _, desc in ipairs(myChar:GetDescendants()) do
+                if desc:IsA("BasePart") and not flyNoclipRestore[desc] then
+                    flyNoclipRestore[desc] = desc.CanCollide
+                    desc.CanCollide = false
+                end
+            end
         else
-            vel = move * speedVal
+            for part, orig in pairs(flyNoclipRestore) do
+                if part and part.Parent then pcall(function() part.CanCollide = orig end) end
+            end
+            flyNoclipRestore = {}
+            myRoot.CanCollide = true
         end
-    else
-        vel = Vector3.zero
-    end
-    if flyCfg.Mode == "Velocity" then
-        myRoot.Velocity = vel
-        if myRoot.AssemblyLinearVelocity then myRoot.AssemblyLinearVelocity = vel end
-    else
-        -- CFrame mode: drive position from our own stored position so gravity never gets a chance to drift us
-        if flyPosition == nil then flyPosition = myRoot.Position end
-        local step = (type(dt) == "number" and dt or 1/60)
-        flyPosition = flyPosition + vel * step
-        local rot = myRoot.CFrame - myRoot.CFrame.Position
-        myRoot.CFrame = CFrame.new(flyPosition) * rot
-        myRoot.Velocity = Vector3.zero
-        if myRoot.AssemblyLinearVelocity then myRoot.AssemblyLinearVelocity = Vector3.zero end
-    end
-end)
+        -- CFrame mode: move in camera look direction (W/S = forward/back, A/D = strafe; looking up + W = go up). Velocity mode: same direction, one speed.
+        local lookDir = cam.CFrame.LookVector
+        local rightDir = cam.CFrame.RightVector
+        local move = Vector3.zero
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + lookDir end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - lookDir end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + rightDir end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - rightDir end
+        -- Optional world up/down (so you can still use Space/Shift without pointing camera)
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then move = move - Vector3.new(0, 1, 0) end
+        local mult = flyCfg.SpeedMultiplier or 1
+        local speedVal = (flyCfg.Speed or 50) * mult
+        local verticalSpeedVal = (flyCfg.VerticalSpeed or 50) * mult
+        local totalLen = move.Magnitude
+        local vel
+        if totalLen > 0.001 then
+            move = move.Unit
+            -- Single speed in movement direction (camera-relative); vertical component uses verticalSpeedVal when using Space/Shift only for consistency
+            local useVerticalSpeed = (math.abs(move.Y) > 0.5) and (move.X * move.X + move.Z * move.Z < 0.01)
+            if useVerticalSpeed then
+                vel = Vector3.new(0, (move.Y > 0 and verticalSpeedVal or -verticalSpeedVal), 0)
+            else
+                vel = move * speedVal
+            end
+        else
+            vel = Vector3.zero
+        end
+        if flyCfg.Mode == "Velocity" then
+            myRoot.Velocity = vel
+            if myRoot.AssemblyLinearVelocity then myRoot.AssemblyLinearVelocity = vel end
+        else
+            -- CFrame mode: drive position from our own stored position so gravity never gets a chance to drift us
+            if flyPosition == nil then flyPosition = myRoot.Position end
+            local step = (type(dt) == "number" and dt or 1/60)
+            flyPosition = flyPosition + vel * step
+            local rot = myRoot.CFrame - myRoot.CFrame.Position
+            myRoot.CFrame = CFrame.new(flyPosition) * rot
+            myRoot.Velocity = Vector3.zero
+            if myRoot.AssemblyLinearVelocity then myRoot.AssemblyLinearVelocity = Vector3.zero end
+        end
+    end)
+end
+initFly()
 
 -- Spinbot: rotate character around Y; keep movement in MoveDirection so running/walking isn't messed up
 local spinbotAngle = 0
@@ -10364,8 +10527,9 @@ function initAntiAimViewer(writeTable, getRemoteFunc, cacheTable, placeIdBox)
             local hit = workspace:Raycast(r.Origin, r.Direction * 10000, params)
             return hit and hit.Position or (r.Origin + r.Direction * 500)
         end)() or Vector3.zero
-        if cursorPos ~= Vector3.zero then
-            pcall(function() rem:FireServer(writeEntry.eventArg1, cursorPos) end)
+        local pos = writeEntry.fixedPos or cursorPos
+        if pos ~= Vector3.zero then
+            pcall(function() rem:FireServer(writeEntry.eventArg1, pos) end)
         end
     end
     track(RunService.Heartbeat, fireAntiAimCursorToRemote)
@@ -10509,44 +10673,6 @@ function initAntiSit()
 end
 initAntiSit()
 
--- Anti Trip: disable FallingDown state so you don't trip
-function initAntiTrip()
-    local function applyAntiTrip(char)
-        if not char then return end
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if not humanoid then return end
-        if Config.Misc.AntiTrip then
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-        else
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-        end
-    end
-
-    track(player.CharacterAdded, function(char)
-        if stopped() then return end
-        if Config.Misc.AntiTrip then
-            applyAntiTrip(char)
-        else
-            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-            if humanoid then humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true) end
-        end
-    end)
-
-    track(RunService.Heartbeat, function()
-        if stopped() then return end
-        local char = player.Character
-        if not char then return end
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if not humanoid then return end
-        if Config.Misc.AntiTrip then
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-        else
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-        end
-    end)
-end
-initAntiTrip()
-
 -- Self character: material dropdown + color; store originals and restore when turned off
 function initSelfCharacter()
 	local heartbeatCount = 0
@@ -10627,9 +10753,10 @@ function initSelfCharacter()
 end
 initSelfCharacter()
 
--- Rapid Fire: lower gun cooldown upvalue when enabled, restore when disabled (tools with GunScript)
+-- Rapid Fire: lower gun cooldown upvalue when enabled only; when disabled do not touch upvalues (writing every frame resets "last fire time" and causes unintended rapid fire)
 function initRapidFire()
 	local rapidFireOriginals = setmetatable({}, { __mode = "k" })
+	local rapidFireRestored = setmetatable({}, { __mode = "k" })
 	local getConnections = getconnections
 	if not getConnections then return end
 	track(RunService.RenderStepped, function()
@@ -10644,15 +10771,30 @@ function initRapidFire()
 		for _, conn in ipairs(conns) do
 			local fn = conn.Function
 			if type(fn) == "function" then
-				local info = debug.getinfo(fn, "u")
-				local nup = info and info.nups or 0
-				if not rapidFireOriginals[fn] then rapidFireOriginals[fn] = {} end
-				local orig = rapidFireOriginals[fn]
-				for i = 1, nup do
-					local ok, val = pcall(debug.getupvalue, fn, i)
-					if ok and type(val) == "number" then
-						if orig[i] == nil then orig[i] = val end
-						pcall(debug.setupvalue, fn, i, cfg.Enabled and 1e-20 or orig[i])
+				if cfg.Enabled then
+					rapidFireRestored[fn] = nil
+					local info = debug.getinfo(fn, "u")
+					local nup = info and info.nups or 0
+					if not rapidFireOriginals[fn] then rapidFireOriginals[fn] = {} end
+					local orig = rapidFireOriginals[fn]
+					for i = 1, nup do
+						local ok, val = pcall(debug.getupvalue, fn, i)
+						if ok and type(val) == "number" then
+							if orig[i] == nil then orig[i] = val end
+							pcall(debug.setupvalue, fn, i, 1e-20)
+						end
+					end
+				else
+					if not rapidFireRestored[fn] and rapidFireOriginals[fn] then
+						local orig = rapidFireOriginals[fn]
+						local info = debug.getinfo(fn, "u")
+						local nup = info and info.nups or 0
+						for i = 1, nup do
+							if orig[i] ~= nil then
+								pcall(debug.setupvalue, fn, i, orig[i])
+							end
+						end
+						rapidFireRestored[fn] = true
 					end
 				end
 			end
