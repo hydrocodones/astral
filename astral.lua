@@ -4460,7 +4460,7 @@ end
 -- Astral config: one table for UI and implementation (no getgenv)
 local Astral = {
 	Main = { Enabled = false },
-	AimAssist = { Enabled = false, Method = "Camlock", Keybind = "C", Mode = "Toggle", AimMode = "ClosestPoint", PartTarget = "UpperTorso", Smoothness = 1, EasingStyle = "Linear", EasingDirection = "Out", Deadzone = false, DeadzoneAmount = 0, UseOffsets = false, JumpOffset = 0, NormalOffset = 0, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
+	AimAssist = { Enabled = false, Method = "Camlock", Keybind = "C", Mode = "Toggle", AimMode = "ClosestPoint", PartTarget = "UpperTorso", Smoothness = 1, EasingStyle = "Linear", EasingDirection = "Out", Deadzone = false, DeadzoneAmount = 0, StickyAim = false, StickyRadius = 80, UseOffsets = false, JumpOffset = 0, NormalOffset = 0, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
 	SilentAim = { Enabled = false, Mode = "Target", AimMode = "ClosestPoint", PartTarget = "UpperTorso", ClosestPointScale = "Scalar", ClosestPointScaleValue = 0, UsePrediction = false, HitChance = 0, AntiAimViewer = false, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
 	AntiCurve = { Enabled = false, Mode = "3D", AngularCurve = 0, DontCurveVertically = false }, -- Mode: "2D" or "3D"
 	Checks = { WallCheck = false, UnlockOnWall = false, Reload = false, Knocked = false, Grabbed = false, ForceField = false, Friend = false, NoToolCheck = false, ChatFocused = false },
@@ -4749,6 +4749,8 @@ do
 	aa:dropdown({ name = "Easing Direction", flag = "aa_easingdir", items = {"In", "Out", "InOut"}, default = Config.AimAssist.EasingDirection or "Out", callback = function(v) Config.AimAssist.EasingDirection = v end })
 	aa:toggle({ name = "Deadzone", flag = "aa_deadzone", default = Config.AimAssist.Deadzone, callback = function(v) Config.AimAssist.Deadzone = v end })
 	aa:slider({ name = "Deadzone Amount", flag = "aa_deadzoneamt", min = 0, max = 200, default = Config.AimAssist.DeadzoneAmount or 50, callback = function(v) Config.AimAssist.DeadzoneAmount = v end })
+	aa:toggle({ name = "Sticky Aim", flag = "aa_stickyaim", default = Config.AimAssist.StickyAim == true, callback = function(v) Config.AimAssist.StickyAim = v end })
+	aa:slider({ name = "Sticky Radius", flag = "aa_stickyradius", min = 10, max = 200, default = Config.AimAssist.StickyRadius or 80, callback = function(v) Config.AimAssist.StickyRadius = v end })
 	aa:toggle({ name = "Offsets", flag = "aa_useoffsets", default = Config.AimAssist.UseOffsets, callback = function(v) Config.AimAssist.UseOffsets = v end })
 	aa:slider({ name = "Jump Offset", flag = "aa_jumpoffset", min = -50, max = 50, default = math.floor((Config.AimAssist.JumpOffset or 0) * 10), callback = function(v) Config.AimAssist.JumpOffset = v / 10 end })
 	aa:slider({ name = "Normal Offset", flag = "aa_normaloffset", min = -50, max = 50, default = math.floor((Config.AimAssist.NormalOffset or 0) * 10), callback = function(v) Config.AimAssist.NormalOffset = v / 10 end })
@@ -6931,7 +6933,7 @@ local function getCharacterAABB(char)
         else
         local parts = {}
         for _, desc in char:GetDescendants() do
-            if desc:IsA("BasePart") and not desc:FindFirstAncestorOfClass("Tool") and not desc:FindFirstAncestorOfClass("Accessory") then
+            if desc:IsA("BasePart") and not desc:FindFirstAncestorOfClass("Tool") then
                 parts[#parts + 1] = desc
             end
         end
@@ -7350,7 +7352,7 @@ track(RunService.RenderStepped, function()
                 local dist = (rootPos - camPos).Magnitude
                 local renderDist = tonumber(flags.esp_render_distance) or tonumber(esp.RenderDistance) or 0
                 if renderDist > 0 and dist > renderDist then continue end
-                -- Player-sized bounds: ignore tools/accessories by using cached BaseParts AABB (no hats/extra)
+                -- Full character bounds: all BaseParts including accessories (hats, etc.); only Tool excluded
                 local minV, maxV = getCharacterAABB(char)
                 if not minV or not maxV then continue end
                 list[#list+1] = { plr = plr, char = char, minV = minV, maxV = maxV, rootPos = rootPos, dist = dist }
@@ -8702,6 +8704,10 @@ local function updateMouse()
     
     -- Smoothness: slider 1 = snappy (lerp 1), 100 = max smooth (lerp 0.005). Stored value is lerp factor.
     local lerpFactor = math.clamp((aa and aa.Smoothness) or 0.2, 0.005, 1)
+    -- Sticky aim: when crosshair is within radius of target, use snappier pull so it "sticks"
+    if aa and aa.StickyAim == true and distance <= (aa.StickyRadius or 80) then
+        lerpFactor = math.min(1, lerpFactor * 2.5)
+    end
     local smoothedPos = currentCursorPos + (delta * lerpFactor)
     
     -- Calculate the movement delta from current position to smoothed position
@@ -8808,29 +8814,34 @@ local function updateCamera()
         end
     end
     
+    -- Offscreen check: only move camera when target is on screen (don't spin to targets behind you)
+    local targetScreen, onScreen = camera:WorldToViewportPoint(pos)
+    if not onScreen then
+        return
+    end
+    
     local aa = getConfig() and getConfig().AimAssist
     -- Smoothness: slider 1 = snappy (lerp 1), 100 = max smooth (lerp 0.005). Stored value is lerp factor.
     local lerpFactor = math.clamp((aa and aa.Smoothness) or 0.2, 0.005, 1)
-    
-    -- Apply deadzone check: check screen distance from cursor to target
-    -- DeadzoneAmount is the radius in pixels where camera won't move
-    -- Only prevent movement if target is on screen and within deadzone radius
-    if aa and aa.Deadzone == true and type(aa.DeadzoneAmount) == "number" and aa.DeadzoneAmount > 0 then
-        -- Convert target world position to screen coordinates
-        local worldPos, onScreen = camera:WorldToViewportPoint(pos)
-        -- Only apply deadzone if target is visible on screen
+    -- Sticky aim: when crosshair is within radius (pixels) of target on screen, use snappier camera pull
+    do
+        local worldPos = targetScreen
         if onScreen then
-            -- Get cursor/mouse position
             local cursorPos = getCursorPos()
-            -- Calculate screen distance from cursor to target (in pixels)
             local screenDistance = (Vector2.new(cursorPos.X, cursorPos.Y) - Vector2.new(worldPos.X, worldPos.Y)).Magnitude
-            -- If target is within deadzone radius on screen, don't move camera
-            -- This prevents jittery micro-adjustments when target is already close to cursor
-            if screenDistance <= aa.DeadzoneAmount then
-                return -- Target is within deadzone, don't adjust camera
+            if aa and aa.StickyAim == true and screenDistance <= (aa.StickyRadius or 80) then
+                lerpFactor = math.min(1, lerpFactor * 2.5)
             end
         end
-        -- If target is off-screen, allow camera to move to bring it on screen (deadzone doesn't apply)
+    end
+    
+    -- Apply deadzone check: check screen distance from cursor to target (target is already on screen here)
+    if aa and aa.Deadzone == true and type(aa.DeadzoneAmount) == "number" and aa.DeadzoneAmount > 0 then
+        local cursorPos = getCursorPos()
+        local screenDistance = (Vector2.new(cursorPos.X, cursorPos.Y) - Vector2.new(targetScreen.X, targetScreen.Y)).Magnitude
+        if screenDistance <= aa.DeadzoneAmount then
+            return
+        end
     end
     
     -- Calculate how far we are from the target (0 = aligned, 1 = 180 degrees away)
@@ -9151,7 +9162,7 @@ local ANTI_AIM_VIEWER_WRITE = {
     [98343466176190] = { remote = "MainRemoteEvent", parentName = "Remotes", eventArg1 = "Z3eHooDMSOUEPoS233^+" },
     [93778920465645] = { remote = "MainRemoteEvent", parentName = "Remotes", eventArg1 = "NOPEATALL^+", fixedPos = Vector3.new(-101.42888641357422, 37.05597686767578, -776.2234497070312) },
     [129449254792324] = { remote = "MainEvent", eventArg1 = "b8bbd5d73" },
-    [75944832659138] = { remote = "MainEvent", eventArg1 = "UpdateMousePos" },
+    [122120252103378] = { remote = "MainEvent", eventArg1 = "UpdateMousePos" },
     [110917236678062] = { remote = "MAINEVENT", eventArg1 = "MOUSE" },
     [130879446158509] = { remote = "MAINEVENT", eventArg1 = "MOUSE" },
 }
