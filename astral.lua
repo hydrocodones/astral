@@ -4460,10 +4460,10 @@ end
 -- Astral config: one table for UI and implementation (no getgenv)
 local Astral = {
 	Main = { Enabled = false },
-	AimAssist = { Enabled = false, Method = "Camlock", Keybind = "C", Mode = "Toggle", AimMode = "ClosestPoint", PartTarget = "UpperTorso", Smoothness = 1, EasingStyle = "Linear", EasingDirection = "Out", Deadzone = false, DeadzoneAmount = 0, StickyAim = false, StickyRadius = 80, UseOffsets = false, JumpOffset = 0, NormalOffset = 0, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
+	AimAssist = { Enabled = false, Method = "Camlock", Keybind = "C", Mode = "Toggle", AimMode = "ClosestPoint", PartTarget = "UpperTorso", SmoothnessX = 1, SmoothnessY = 1, EasingStyle = "Linear", EasingDirection = "Out", Deadzone = false, DeadzoneAmount = 0, StickyAim = false, StickyRadius = 80, UseOffsets = false, JumpOffset = 0, NormalOffset = 0, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
 	SilentAim = { Enabled = false, Mode = "Target", AimMode = "ClosestPoint", PartTarget = "UpperTorso", ClosestPointScale = "Scalar", ClosestPointScaleValue = 0, UsePrediction = false, HitChance = 0, AntiAimViewer = false, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
 	AntiCurve = { Enabled = false, Mode = "3D", AngularCurve = 0, DontCurveVertically = false }, -- Mode: "2D" or "3D"
-	Checks = { WallCheck = false, UnlockOnWall = false, Reload = false, Knocked = false, Grabbed = false, ForceField = false, Friend = false, NoToolCheck = false, ChatFocused = false },
+	Checks = { WallCheck = false, UnlockOnWall = false, Reload = false, Knocked = false, Grabbed = false, ForceField = false, Friend = false, NoToolCheck = false, ChatFocused = false, IgnoreWhenMoving = false },
 	Range = { Enabled = false, Range = 0 },
 	Triggerbot = { Enabled = false, TriggerKey = "T", Mode = "Toggle", TriggerWallCheck = false, TriggerDelay = 0, HumanizationDelay = 0, KnifeCheck = false, TriggerBlacklistedItems = {"[Knife]"}, OnlyOnCamlockTarget = false, FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1, 1, 1) } },
 	Resolver = { Enabled = false, ResolverType = "Velocity", Strength = 0 },
@@ -4744,7 +4744,8 @@ do
 	aa:dropdown({ name = "Aim Mode", flag = "aa_aimmode", items = {"ClosestPart", "ClosestPoint", "Part"}, default = Config.AimAssist.AimMode, callback = function(v) Config.AimAssist.AimMode = v end })
 	local r15Parts = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand", "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot"}
 	aa:dropdown({ name = "Part Target", flag = "aa_parttarget", items = r15Parts, default = Config.AimAssist.PartTarget, callback = function(v) Config.AimAssist.PartTarget = v end })
-	aa:slider({ name = "Smoothness", flag = "aa_smoothness", min = 0, max = 100, default = 0, callback = function(v) Config.AimAssist.Smoothness = math.min(1, 0.005 * 2 ^ ((100 - v) / 10)) end })
+	aa:slider({ name = "Smoothness X", flag = "aa_smoothness_x", min = 0, max = 100, default = 0, callback = function(v) Config.AimAssist.SmoothnessX = math.min(1, 0.005 * 2 ^ ((100 - v) / 10)) end })
+	aa:slider({ name = "Smoothness Y", flag = "aa_smoothness_y", min = 0, max = 100, default = 0, callback = function(v) Config.AimAssist.SmoothnessY = math.min(1, 0.005 * 2 ^ ((100 - v) / 10)) end })
 	aa:dropdown({ name = "Easing Style", flag = "aa_easingstyle", items = {"Linear", "Sine", "Back", "Quad", "Quart", "Quint", "Bounce", "Elastic", "Exponential", "Circular", "Cubic"}, default = Config.AimAssist.EasingStyle or "Linear", callback = function(v) Config.AimAssist.EasingStyle = v end })
 	aa:dropdown({ name = "Easing Direction", flag = "aa_easingdir", items = {"In", "Out", "InOut"}, default = Config.AimAssist.EasingDirection or "Out", callback = function(v) Config.AimAssist.EasingDirection = v end })
 	aa:toggle({ name = "Deadzone", flag = "aa_deadzone", default = Config.AimAssist.Deadzone, callback = function(v) Config.AimAssist.Deadzone = v end })
@@ -4862,6 +4863,7 @@ do
 	ch:toggle({ name = "Friend", flag = "ch_friend", default = Config.Checks.Friend, callback = function(v) Config.Checks.Friend = v end })
 	ch:toggle({ name = "No Tool Check", flag = "ch_notool", default = Config.Checks.NoToolCheck, callback = function(v) Config.Checks.NoToolCheck = v end })
 	ch:toggle({ name = "Chat Focused", flag = "ch_chatfocused", default = Config.Checks.ChatFocused, callback = function(v) Config.Checks.ChatFocused = v end })
+	ch:toggle({ name = "Ignore When Moving", flag = "ch_ignoremoving", default = Config.Checks.IgnoreWhenMoving == true, callback = function(v) Config.Checks.IgnoreWhenMoving = v end })
 	uiYield()
 
 	-- Rage tab (Gun mods + Movement)
@@ -8624,6 +8626,16 @@ local function updateMouse()
     -- Disable when chat or any text box is focused
     if isChatFocused() then return end
 
+    -- Ignore when moving (Checks): don't run aim assist while local player is moving
+    local checks = getConfig() and getConfig().Checks
+    if checks and checks.IgnoreWhenMoving == true then
+        local myChar = player.Character
+        local hum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+        if hum and hum.MoveDirection and hum.MoveDirection.Magnitude > 0.2 then
+            return
+        end
+    end
+
     -- Check if target is knocked/grabbed first and unlock immediately
     if lockedTarget then
         local char = getChar(lockedTarget)
@@ -8702,16 +8714,14 @@ local function updateMouse()
         return -- Already close enough
     end
     
-    -- Smoothness: slider 1 = snappy (lerp 1), 100 = max smooth (lerp 0.005). Stored value is lerp factor.
-    local lerpFactor = math.clamp((aa and aa.Smoothness) or 0.2, 0.005, 1)
-    -- Sticky aim: when crosshair is within radius of target, use snappier pull so it "sticks"
+    -- Smoothness X/Y: separate horizontal and vertical lerp (0 = snappy, 100 = smooth)
+    local lerpX = math.clamp((aa and aa.SmoothnessX) or 0.2, 0.005, 1)
+    local lerpY = math.clamp((aa and aa.SmoothnessY) or 0.2, 0.005, 1)
     if aa and aa.StickyAim == true and distance <= (aa.StickyRadius or 80) then
-        lerpFactor = math.min(1, lerpFactor * 2.5)
+        lerpX = math.min(1, lerpX * 2.5)
+        lerpY = math.min(1, lerpY * 2.5)
     end
-    local smoothedPos = currentCursorPos + (delta * lerpFactor)
-    
-    -- Calculate the movement delta from current position to smoothed position
-    local moveDelta = smoothedPos - currentCursorPos
+    local moveDelta = Vector2.new(delta.X * lerpX, delta.Y * lerpY)
     
     -- Only skip move if delta is negligible; use lower threshold so high smoothness (98+) still moves and reaches target
     local moveThreshold = (distance < 15) and 0.01 or 0.05
@@ -8723,12 +8733,12 @@ local function updateMouse()
     -- Move mouse using mousemoverel (if available)
     if mousemoverel then
         mousemoverel(moveDelta.X, moveDelta.Y)
-        lastMousePos = smoothedPos
+        lastMousePos = currentCursorPos + moveDelta
     else
         -- Fallback: try to use UserInputService (may not work in all executors)
         pcall(function()
             -- Note: Direct mouse movement may not be available in all executors
-            lastMousePos = smoothedPos
+            lastMousePos = currentCursorPos + moveDelta
         end)
     end
 end
@@ -8766,6 +8776,16 @@ local function updateCamera()
     
     -- Disable when chat or any text box is focused
     if isChatFocused() then return end
+
+    -- Ignore when moving (Checks): don't run aim assist while local player is moving
+    local checks = getConfig() and getConfig().Checks
+    if checks and checks.IgnoreWhenMoving == true then
+        local myChar = player.Character
+        local hum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+        if hum and hum.MoveDirection and hum.MoveDirection.Magnitude > 0.2 then
+            return
+        end
+    end
 
     -- Check if target is knocked/grabbed first and unlock immediately
     if lockedTarget then
@@ -8821,19 +8841,21 @@ local function updateCamera()
     end
     
     local aa = getConfig() and getConfig().AimAssist
-    -- Smoothness: slider 1 = snappy (lerp 1), 100 = max smooth (lerp 0.005). Stored value is lerp factor.
-    local lerpFactor = math.clamp((aa and aa.Smoothness) or 0.2, 0.005, 1)
-    -- Sticky aim: when crosshair is within radius (pixels) of target on screen, use snappier camera pull
+    -- Smoothness X/Y: use average for camera lerp (same scale as mouse)
+    local lerpX = math.clamp((aa and aa.SmoothnessX) or 0.2, 0.005, 1)
+    local lerpY = math.clamp((aa and aa.SmoothnessY) or 0.2, 0.005, 1)
     do
         local worldPos = targetScreen
         if onScreen then
             local cursorPos = getCursorPos()
             local screenDistance = (Vector2.new(cursorPos.X, cursorPos.Y) - Vector2.new(worldPos.X, worldPos.Y)).Magnitude
             if aa and aa.StickyAim == true and screenDistance <= (aa.StickyRadius or 80) then
-                lerpFactor = math.min(1, lerpFactor * 2.5)
+                lerpX = math.min(1, lerpX * 2.5)
+                lerpY = math.min(1, lerpY * 2.5)
             end
         end
     end
+    local lerpFactor = (lerpX + lerpY) * 0.5
     
     -- Apply deadzone check: check screen distance from cursor to target (target is already on screen here)
     if aa and aa.Deadzone == true and type(aa.DeadzoneAmount) == "number" and aa.DeadzoneAmount > 0 then
@@ -10313,27 +10335,31 @@ function initFly()
 end
 initFly()
 
--- Spinbot: rotate character around Y; keep movement in MoveDirection so running/walking isn't messed up
-local spinbotAngle = 0
-track(RunService.Heartbeat, function(dt)
-    if stopped() then return end
-    local spin = Config.Rage and Config.Rage.Spinbot
-    if not (spin and spin.Enabled) then return end
-    local myChar = getOwnChar()
-    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    local humanoid = myChar and myChar:FindFirstChildOfClass("Humanoid")
-    if not myRoot then return end
-    local degPerSec = (spin.Speed or 50) * 36
-    spinbotAngle = spinbotAngle + degPerSec * (type(dt) == "number" and dt or 1/60)
-    myRoot.CFrame = CFrame.new(myRoot.Position) * CFrame.Angles(0, math.rad(spinbotAngle), 0)
-    -- Keep movement in input direction so spin doesn't mess with ability to move (camera-relative)
-    if humanoid and humanoid.MoveDirection.Magnitude > 0.05 then
-        local moveDir = humanoid.MoveDirection.Unit
-        local walkSpeed = humanoid.WalkSpeed or 16
-        local vel = myRoot.AssemblyLinearVelocity
-        myRoot.AssemblyLinearVelocity = Vector3.new(moveDir.X * walkSpeed, vel.Y, moveDir.Z * walkSpeed)
+-- Spinbot: in own function so locals don't count toward main chunk 200 limit
+do
+    function initSpinbot()
+        local spinbotAngle = 0
+        track(RunService.Heartbeat, function(dt)
+            if stopped() then return end
+            local spin = Config.Rage and Config.Rage.Spinbot
+            if not (spin and spin.Enabled) then return end
+            local myChar = getOwnChar()
+            local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+            local humanoid = myChar and myChar:FindFirstChildOfClass("Humanoid")
+            if not myRoot then return end
+            local degPerSec = (spin.Speed or 50) * 36
+            spinbotAngle = spinbotAngle + degPerSec * (type(dt) == "number" and dt or 1/60)
+            myRoot.CFrame = CFrame.new(myRoot.Position) * CFrame.Angles(0, math.rad(spinbotAngle), 0)
+            if humanoid and humanoid.MoveDirection.Magnitude > 0.05 then
+                local moveDir = humanoid.MoveDirection.Unit
+                local walkSpeed = humanoid.WalkSpeed or 16
+                local vel = myRoot.AssemblyLinearVelocity
+                myRoot.AssemblyLinearVelocity = Vector3.new(moveDir.X * walkSpeed, vel.Y, moveDir.Z * walkSpeed)
+            end
+        end)
     end
-end)
+    initSpinbot()
+end
 
 -- Hitbox Expander: global function in do-block so no local register is used in enclosing scope (avoids 200 limit)
 do
