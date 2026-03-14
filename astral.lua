@@ -4462,8 +4462,8 @@ local Astral = {
 	Main = { Enabled = false },
 	AimAssist = { Enabled = false, Method = "Camlock", Keybind = "C", Mode = "Toggle", AimMode = "ClosestPoint", PartTarget = "UpperTorso", SmoothnessX = 1, SmoothnessY = 1, EasingStyle = "Linear", EasingDirection = "Out", Deadzone = false, DeadzoneAmount = 0, StickyAim = false, StickyRadius = 80, UseOffsets = false, JumpOffset = 0, NormalOffset = 0, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
 	SilentAim = { Enabled = false, Mode = "Target", AimMode = "ClosestPoint", PartTarget = "UpperTorso", ClosestPointScale = "Scalar", ClosestPointScaleValue = 0, UsePrediction = false, HitChance = 0, AntiAimViewer = false, TargetPriority = "Closest to crosshair", FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1,1,1) }, Snapline = { Enabled = false, Color = Color3.new(1,1,1), Thickness = 1 } },
-	AntiCurve = { Enabled = false, Mode = "3D", AngularCurve = 0, DontCurveVertically = false }, -- Mode: "2D" or "3D"
-	Checks = { WallCheck = false, UnlockOnWall = false, Reload = false, Knocked = false, Grabbed = false, ForceField = false, Friend = false, NoToolCheck = false, ChatFocused = false, IgnoreWhenMoving = false },
+	AntiCurve = { Enabled = false, Mode = "3D", AngularCurve = 0 }, -- Mode: "2D" or "3D"
+	Checks = { WallCheck = false, UnlockOnWall = false, Reload = false, Knocked = false, Grabbed = false, ForceField = false, Friend = false, NoToolCheck = false, ChatFocused = false },
 	Range = { Enabled = false, Range = 0 },
 	Triggerbot = { Enabled = false, TriggerKey = "T", Mode = "Toggle", TriggerWallCheck = false, TriggerDelay = 0, HumanizationDelay = 0, KnifeCheck = false, TriggerBlacklistedItems = {"[Knife]"}, OnlyOnCamlockTarget = false, FOV = { Enabled = false, Size = 180, Thickness = 1, Color = Color3.new(1, 1, 1) } },
 	Resolver = { Enabled = false, ResolverType = "Velocity", Strength = 0 },
@@ -4575,8 +4575,8 @@ local Astral = {
 		SelfCharacter = { CharacterEnabled = false, CharacterMaterial = "Plastic", MaterialColor = Color3.new(1, 1, 1), ToolEnabled = false, ToolMaterial = "Plastic", ToolMaterialColor = Color3.new(1, 1, 1) },
 	},
 	Movement = { Enabled = false, WalkSpeed = 0, JumpPower = 0, Keybind = "V", SpeedType = "WalkSpeed", CFrameSpeed = 0 },
-	GunModifications = { NoSpread = { Enabled = false, Amount = 0 }, ClientBulletRedirection = { Enabled = false, Weapons = {"[Revolver]", "[Double-Barrel SG]", "[TacticalShotgun]", "[AR]", "[SMG]", "[AK47]", "[Shotgun]", "[Silencer]", "[SilencerAR]", "[AUG]", "[P90]", "[Rifle]", "[LMG]"} }, Range = { Enabled = false, Value = 0 }, Wallbang = { Enabled = false }, RapidFire = { Enabled = false }, AutoFire = { Enabled = false, FireDistance = 200, AlwaysFire = false, FireCooldown = 50 } },
-	Rage = { Orbit = { Enabled = false, Style = "Strafe", Distance = 15, Height = 0, Speed = 75 }, SpectateTarget = false, Fly = { Enabled = false, Keybind = "F", Mode = "CFrame", Speed = 0, VerticalSpeed = 0, SpeedMultiplier = 0, NoClip = false }, HitboxExpander = { Enabled = false, Part = "HumanoidRootPart", Size = 0, Visualizer = false, VisualizerTransparency = 0, Color = Color3.new(1, 0, 0), NoCollide = false }, Spinbot = { Enabled = false, Speed = 0 }},
+	GunModifications = { NoSpread = { Enabled = false, Amount = 0 }, ClientBulletRedirection = { Enabled = false, Weapons = {"[Revolver]", "[Double-Barrel SG]", "[TacticalShotgun]", "[AR]", "[SMG]", "[AK47]", "[Shotgun]", "[Silencer]", "[SilencerAR]", "[AUG]", "[P90]", "[Rifle]", "[LMG]"} }, Range = { Enabled = false, Value = 0 }, Wallbang = { Enabled = false }, RapidFire = { Enabled = false } },
+	Rage = { Orbit = { Enabled = false, Style = "Strafe", Distance = 15, Height = 0, Speed = 75, KeepOrbitOnKnockRespawn = false }, SpectateTarget = false, Fly = { Enabled = false, Keybind = "F", Mode = "CFrame", Speed = 0, VerticalSpeed = 0, SpeedMultiplier = 0, NoClip = false }, HitboxExpander = { Enabled = false, Part = "HumanoidRootPart", Size = 0, Visualizer = false, VisualizerTransparency = 0, Color = Color3.new(1, 0, 0), NoCollide = false }, Spinbot = { Enabled = false, Speed = 0 }},
 	Misc = { AntiSit = false, NoJumpCooldown = false, AntiVoid = false },
 	Macro = { Keybind = "Z", Enabled = false, Acceleration = 0.0 },
 }
@@ -4789,7 +4789,6 @@ do
 	ac:toggle({ name = "Enabled", flag = "ac_enabled", default = Config.AntiCurve.Enabled, callback = function(v) Config.AntiCurve.Enabled = v end })
 	ac:dropdown({ name = "Mode", flag = "ac_mode", items = {"2D", "3D"}, default = Config.AntiCurve.Mode == "2D" and "2D" or "3D", callback = function(v) Config.AntiCurve.Mode = v end })
 	ac:slider({ name = "Angular Curve", flag = "ac_angular", min = 0, max = 10, default = Config.AntiCurve.AngularCurve or 2, callback = function(v) Config.AntiCurve.AngularCurve = v end })
-	ac:toggle({ name = "Don't curve vertically", flag = "ac_dont_curve_vertically", default = Config.AntiCurve.DontCurveVertically, callback = function(v) Config.AntiCurve.DontCurveVertically = v end })
 	uiYield()
 
 	local legitCbr = legitTab:section({ name = "Client Bullet Redirection", side = "right" })
@@ -4863,7 +4862,6 @@ do
 	ch:toggle({ name = "Friend", flag = "ch_friend", default = Config.Checks.Friend, callback = function(v) Config.Checks.Friend = v end })
 	ch:toggle({ name = "No Tool Check", flag = "ch_notool", default = Config.Checks.NoToolCheck, callback = function(v) Config.Checks.NoToolCheck = v end })
 	ch:toggle({ name = "Chat Focused", flag = "ch_chatfocused", default = Config.Checks.ChatFocused, callback = function(v) Config.Checks.ChatFocused = v end })
-	ch:toggle({ name = "Ignore When Moving", flag = "ch_ignoremoving", default = Config.Checks.IgnoreWhenMoving == true, callback = function(v) Config.Checks.IgnoreWhenMoving = v end })
 	uiYield()
 
 	-- Rage tab (Gun mods + Movement)
@@ -4900,21 +4898,14 @@ do
 	Config.GunModifications.RapidFire = Config.GunModifications.RapidFire or { Enabled = false }
 	local rapidFireSec = rageTab:section({ name = "Rapid Fire", side = "right" })
 	rapidFireSec:toggle({ name = "Enabled", flag = "rapidfire_enabled", default = Config.GunModifications.RapidFire.Enabled, callback = function(v) Config.GunModifications.RapidFire.Enabled = v end })
-	Config.GunModifications.AutoFire = Config.GunModifications.AutoFire or { Enabled = false, FireDistance = 200, AlwaysFire = false, FireCooldown = 50 }
-	local autoFireSec = rageTab:section({ name = "Auto Fire", side = "left" })
-	autoFireSec:toggle({ name = "Enabled", flag = "autofire_enabled", default = Config.GunModifications.AutoFire.Enabled, callback = function(v) Config.GunModifications.AutoFire.Enabled = v end })
-	autoFireSec:slider({ name = "Fire Distance", flag = "autofire_distance", min = 50, max = 1000, default = math.min(1000, math.max(50, Config.GunModifications.AutoFire.FireDistance or 200)), callback = function(v) Config.GunModifications.AutoFire.FireDistance = v end })
-	autoFireSec:toggle({ name = "Always Fire", flag = "autofire_always", default = Config.GunModifications.AutoFire.AlwaysFire == true, callback = function(v) Config.GunModifications.AutoFire.AlwaysFire = v end })
-	autoFireSec:slider({ name = "Fire Cooldown (ms)", flag = "autofire_cooldown", min = 30, max = 200, default = math.min(200, math.max(30, Config.GunModifications.AutoFire.FireCooldown or 50)), callback = function(v) Config.GunModifications.AutoFire.FireCooldown = v end })
-	uiYield()
-
-	Config.Rage.Orbit = Config.Rage.Orbit or { Enabled = false, Style = "Strafe", Distance = 15, Height = 0, Speed = 75 }
+	Config.Rage.Orbit = Config.Rage.Orbit or { Enabled = false, Style = "Strafe", Distance = 15, Height = 0, Speed = 75, KeepOrbitOnKnockRespawn = false }
 	local orbitSec = rageTab:section({ name = "Orbit", side = "right" })
 	orbitSec:toggle({ name = "Enabled", flag = "orbit_enabled", default = Config.Rage.Orbit.Enabled, callback = function(v) Config.Rage.Orbit.Enabled = v; if setupOrbit then setupOrbit(); if setupSpectate then setupSpectate() end end end })
-	orbitSec:dropdown({ name = "Style", flag = "orbit_style", items = {"Random Spam", "Random", "Strafe"}, default = Config.Rage.Orbit.Style or "Strafe", callback = function(v) Config.Rage.Orbit.Style = v end })
+	orbitSec:dropdown({ name = "Style", flag = "orbit_style", items = {"Random", "Strafe"}, default = Config.Rage.Orbit.Style or "Strafe", callback = function(v) Config.Rage.Orbit.Style = v end })
 	orbitSec:slider({ name = "Distance", flag = "orbit_distance", min = 2, max = 200, default = math.min(200, math.max(2, Config.Rage.Orbit.Distance or 15)), callback = function(v) Config.Rage.Orbit.Distance = v end })
 	orbitSec:slider({ name = "Height", flag = "orbit_height", min = -200, max = 200, default = math.min(200, math.max(-200, Config.Rage.Orbit.Height or 0)), callback = function(v) Config.Rage.Orbit.Height = v end })
 	orbitSec:slider({ name = "Speed (%)", flag = "orbit_speed", min = 1, max = 100, default = math.min(100, math.max(1, Config.Rage.Orbit.Speed or 75)), callback = function(v) Config.Rage.Orbit.Speed = v end })
+	orbitSec:toggle({ name = "Keep orbit on knock/respawn", flag = "orbit_keep_on_knock_respawn", default = Config.Rage.Orbit.KeepOrbitOnKnockRespawn == true, callback = function(v) Config.Rage.Orbit.KeepOrbitOnKnockRespawn = v end })
 	orbitSec:toggle({ name = "Spectate Target", flag = "spectate_target", default = Config.Rage.SpectateTarget, callback = function(v) Config.Rage.SpectateTarget = v; if setupOrbit then setupOrbit() end; if setupSpectate then setupSpectate() end end })
 	uiYield()
 
@@ -5421,6 +5412,7 @@ local lastWallCheck = 0
 local cachedWallCheck = true
 local orbitConn = nil
 local orbitAngle = 0
+local orbitCachedTargetPos = nil
 local randomTpTick = 0
 local lastRandomTpPos = nil
 local orbitWasActiveLastFrame = false
@@ -6927,12 +6919,7 @@ local function getCharacterAABB(char)
             return Vector3.new(minX, minY, minZ), Vector3.new(maxX, maxY, maxZ)
         end
     else
-        -- Cache miss: limit GetDescendants per frame (use root/head fallback if cache already big)
-        local cacheSize = 0
-        for _ in next, espAABBCache do cacheSize = cacheSize + 1 end
-        if cacheSize >= 8 then
-            -- Skip full rebuild this frame; fall through to root/head fallback below
-        else
+        -- Cache miss: always build full AABB from all BaseParts (including accessories) so box fits full player
         local parts = {}
         for _, desc in char:GetDescendants() do
             if desc:IsA("BasePart") and not desc:FindFirstAncestorOfClass("Tool") then
@@ -6940,7 +6927,11 @@ local function getCharacterAABB(char)
             end
         end
         if #parts > 0 then
-            espAABBCache[char] = { parts = parts, numChildren = numChildren }
+            local cacheSize = 0
+            for _ in next, espAABBCache do cacheSize = cacheSize + 1 end
+            if cacheSize < 16 then
+                espAABBCache[char] = { parts = parts, numChildren = numChildren }
+            end
             local minX, minY, minZ = math.huge, math.huge, math.huge
             local maxX, maxY, maxZ = -math.huge, -math.huge, -math.huge
             for i = 1, #parts do
@@ -6952,7 +6943,6 @@ local function getCharacterAABB(char)
                 minZ = min(minZ, pos.Z - hz) maxZ = max(maxZ, pos.Z + hz)
             end
             return Vector3.new(minX, minY, minZ), Vector3.new(maxX, maxY, maxZ)
-        end
         end
     end
 
@@ -7257,13 +7247,12 @@ local function clearEspPlayer(plr)
     for _, L in c.skeletonOutlineLines or {} do pcall(function() L.Visible = false end) end
 end
 -- ESP: throttle to reduce lag
-local ESP_MAX_PLAYERS = 0
 local espFrameCount = 0
 local espClearedWhenDisabled = false -- only run hide loop once when ESP is off to avoid stutter
 -- ESP perf: recalc at a fixed rate, but DRAW every frame using cached results
 local espLastCalc = 0
-local espCalcIntervalBox = 1/90 -- recalc boxes at ~90hz (higher visual smoothness)
-local espCalcIntervalOther = 1/90
+local espCalcIntervalBox = 1/60 -- recalc at 60hz; full AABB cached per character
+local espCalcIntervalOther = 1/60
 local espLastList = nil
 local espLastSeen = nil
 track(RunService.RenderStepped, function()
@@ -7352,9 +7341,9 @@ track(RunService.RenderStepped, function()
                 local toChar = (rootPos - camPos).Unit
                 if toChar:Dot(camLook) < -0.15 then continue end
                 local dist = (rootPos - camPos).Magnitude
-                local renderDist = tonumber(flags.esp_render_distance) or tonumber(esp.RenderDistance) or 0
+                local renderDist = tonumber(flags and flags.esp_render_distance) or tonumber(esp and esp.RenderDistance) or 0
                 if renderDist > 0 and dist > renderDist then continue end
-                -- Full character bounds: all BaseParts including accessories (hats, etc.); only Tool excluded
+                -- Full character bounds: all BaseParts including accessories (only Tool excluded)
                 local minV, maxV = getCharacterAABB(char)
                 if not minV or not maxV then continue end
                 list[#list+1] = { plr = plr, char = char, minV = minV, maxV = maxV, rootPos = rootPos, dist = dist }
@@ -7364,11 +7353,20 @@ track(RunService.RenderStepped, function()
             espLastList = list
             espLastSeen = seen
         end
+        local renderDist = tonumber(flags and flags.esp_render_distance) or tonumber(esp and esp.RenderDistance) or 0
         for drawIndex = 1, #list do
             pcall(function()
             local ent = list[drawIndex]
             if not ent then return end
             local plr, char, minV, maxV, rootPos = ent.plr, ent.char, ent.minV, ent.maxV, ent.rootPos
+            if not char or not rootPos or not minV or not maxV then
+                clearEspPlayer(plr)
+                return
+            end
+            if renderDist > 0 and (rootPos - camPos).Magnitude > renderDist then
+                clearEspPlayer(plr)
+                return
+            end
             seen[plr] = true
             local corners = getBoxCorners(minV, maxV)
             local screen = {}
@@ -7400,8 +7398,8 @@ track(RunService.RenderStepped, function()
             maxSx = min(maxSx, vw - margin)
             minSy = max(minSy, margin)
             maxSy = min(maxSy, vh - margin)
-            local doFillThisPlayer = doFill and (drawIndex <= 6)
-            -- Show/update text for every drawn player when any of name/tool/distance is enabled (no cap so no player "breaks")
+            local doFillThisPlayer = doFill
+            -- Show/update text for every drawn player when any of name/tool/distance is enabled
             c = ensureEspDrawings(plr, boxType, doFillThisPlayer, needText, esp.HealthBar, esp.ArmorBar)
             if c then c.espLastBoxOk = true end
             local screenRoot = camera:WorldToViewportPoint(rootPos)
@@ -7601,7 +7599,7 @@ track(RunService.RenderStepped, function()
                 local bgColor = Color3.new(0.15, 0.15, 0.15)
                 local bx, by = 0, 0
                 local showHealthText = esp.HealthBarText == true and c.healthText ~= nil
-                local fillStyle = (drawIndex <= 6) and (esp.HealthBarFillStyle or "Gradient") or "Static"
+                local fillStyle = esp.HealthBarFillStyle or "Gradient"
                 -- Smooth blended health bar gradient. Red (bottom) -> orange -> yellow -> green (top). No animation.
                 local function smoothStep(u) return u * u * (3 - 2 * u) end
                 local function healthBarGradColor(t)
@@ -7886,7 +7884,7 @@ track(RunService.RenderStepped, function()
                 local sideOffset = sameSide and (barW + 4) or 0
                 local bgColor = Color3.new(0.15, 0.15, 0.15)
                 local aColor = Color3.new(0.3, 0.5, 0.9)
-                local fillStyle = (drawIndex <= 6) and (esp.ArmorBarFillStyle or "Gradient") or "Static"
+                local fillStyle = esp.ArmorBarFillStyle or "Gradient"
                 local function smoothStep(u) return u * u * (3 - 2 * u) end
                 local function armorBarGradColor(t)
                     t = math.clamp(t, 0, 1)
@@ -8626,16 +8624,6 @@ local function updateMouse()
     -- Disable when chat or any text box is focused
     if isChatFocused() then return end
 
-    -- Ignore when moving (Checks): don't run aim assist while local player is moving
-    local checks = getConfig() and getConfig().Checks
-    if checks and checks.IgnoreWhenMoving == true then
-        local myChar = player.Character
-        local hum = myChar and myChar:FindFirstChildOfClass("Humanoid")
-        if hum and hum.MoveDirection and hum.MoveDirection.Magnitude > 0.2 then
-            return
-        end
-    end
-
     -- Check if target is knocked/grabbed first and unlock immediately
     if lockedTarget then
         local char = getChar(lockedTarget)
@@ -8745,9 +8733,6 @@ end
 
 -- Camera-based aim assist: moves the camera to target
 local function updateCamera()
-    -- When macro is active (any variety), don't override camera so user can look around e.g. in first person
-    local macro = getConfig() and getConfig().Macro
-    if macro and macro.Enabled and isEnabled then return end
     local aa = getConfig() and getConfig().AimAssist
     if not (aa and aa.Enabled) then if aimEnabled then disableAimbot() end return end
     -- Hold mode: only active while key is held; check every frame so release is detected reliably
@@ -8776,16 +8761,6 @@ local function updateCamera()
     
     -- Disable when chat or any text box is focused
     if isChatFocused() then return end
-
-    -- Ignore when moving (Checks): don't run aim assist while local player is moving
-    local checks = getConfig() and getConfig().Checks
-    if checks and checks.IgnoreWhenMoving == true then
-        local myChar = player.Character
-        local hum = myChar and myChar:FindFirstChildOfClass("Humanoid")
-        if hum and hum.MoveDirection and hum.MoveDirection.Magnitude > 0.2 then
-            return
-        end
-    end
 
     -- Check if target is knocked/grabbed first and unlock immediately
     if lockedTarget then
@@ -9885,18 +9860,6 @@ task.spawn(function()
         end
         if not targetPos or typeof(targetPos) ~= "Vector3" then return oldGetAim(origin) end
         if useCbr and checkAntiCurve and not checkAntiCurve(targetPos) then return oldGetAim(origin) end
-        local ac = getConfig() and getConfig().AntiCurve
-        if ac and ac.Enabled and ac.DontCurveVertically then
-            local ok, mousePos = pcall(getCursorPos)
-            if ok and mousePos and camera then
-                local screenPos, onScreen = camera:WorldToViewportPoint(targetPos)
-                if onScreen then
-                    local ray = camera:ViewportPointToRay(screenPos.X, mousePos.Y)
-                    local dist = (targetPos - origin).Magnitude
-                    targetPos = ray.Origin + ray.Direction * dist
-                end
-            end
-        end
         local dir = targetPos - origin
         if dir.Magnitude < 0.001 then return oldGetAim(origin) end
         return dir.Unit
@@ -10160,24 +10123,39 @@ local function setupOrbit()
             orbitWasActiveLastFrame = false
         end
         if not lockedTarget then
+            orbitCachedTargetPos = nil
             restorePositionOnly()
             return
         end
+        local keepOnKnockRespawn = orbitCfg.KeepOrbitOnKnockRespawn == true
         local char = getChar(lockedTarget)
-        if not char or not isAlive(lockedTarget) or isKnockedOrGrabbed(char) then
-            restorePositionOnly()
-            return
+        local targetRoot = char and char:FindFirstChild("HumanoidRootPart")
+        if targetRoot then
+            orbitCachedTargetPos = targetRoot.Position
         end
-        local targetRoot = char:FindFirstChild("HumanoidRootPart")
-        if not targetRoot then
-            restorePositionOnly()
-            return
+        if not keepOnKnockRespawn then
+            if not char or not isAlive(lockedTarget) or isKnockedOrGrabbed(char) then
+                restorePositionOnly()
+                return
+            end
+            if not targetRoot then
+                restorePositionOnly()
+                return
+            end
+        else
+            if not orbitCachedTargetPos then
+                if not char or not targetRoot then
+                    restorePositionOnly()
+                    return
+                end
+                orbitCachedTargetPos = targetRoot.Position
+            end
         end
         if not myRoot then orbitWasActiveLastFrame = false return end
         if not orbitStartCFrame then orbitStartCFrame = myRoot.CFrame end
-        local targetPos = targetRoot.Position
+        local targetPos = targetRoot and targetRoot.Position or orbitCachedTargetPos
         local style = orbitCfg.Style or "Strafe"
-        if style == "strafe" then style = "Strafe" elseif style == "random" then style = "Random" elseif style == "random spam" then style = "Random Spam" end
+        if style == "strafe" then style = "Strafe" elseif style == "random" then style = "Random" end
         local dist = orbitCfg.Distance or 15
         local heightVal = orbitCfg.Height or 0
         local speedPct = orbitCfg.Speed or 75
@@ -10196,20 +10174,6 @@ local function setupOrbit()
             local r = math.random
             local newCf = CFrame.new(targetPos + Vector3.new(r(-dist, dist), r(-dist, dist), r(-dist, dist))) * CFrame.Angles(math.rad(r(1, 359)), math.rad(r(1, 359)), math.rad(r(1, 359)))
             myRoot.CFrame = newCf
-        elseif style == "Random Spam" then
-            orbitWasActiveLastFrame = true
-            local t = tick()
-            local diff = t - followTargetAvoidLastTick
-            local oldDiff = diff < 0.06
-            if diff > 0.11 or oldDiff then
-                local r = math.random
-                local newCf = CFrame.new(targetPos + Vector3.new(r(-dist, dist), r(-dist, dist), r(-dist, dist))) * CFrame.Angles(math.rad(r(1, 359)), math.rad(r(1, 359)), math.rad(r(1, 359)))
-                myRoot.CFrame = newCf
-                if not oldDiff then followTargetAvoidLastTick = t end
-            else
-                local r = math.random
-                myRoot.CFrame = CFrame.new(r(-2147483647, 2147483647), r(-400, 2147483647), r(-2147483647, 2147483647)) * CFrame.Angles(math.rad(r(1, 359)), math.rad(r(1, 359)), math.rad(r(1, 359)))
-            end
         else
             orbitWasActiveLastFrame = false
         end
@@ -10839,40 +10803,6 @@ function initRapidFire()
 	end)
 end
 initRapidFire()
-
--- Auto Fire: automatically fire when target in range (or always when Always Fire on), with cooldown (from jujucopies-style logic)
-function initAutoFire()
-	local lastAutoFireTime = 0
-	track(RunService.RenderStepped, function()
-		if stopped() then return end
-		local cfg = getConfig() and getConfig().GunModifications and getConfig().GunModifications.AutoFire
-		if not cfg or not cfg.Enabled then return end
-		local char = player.Character
-		local tool = char and char:FindFirstChildOfClass("Tool")
-		if not tool then return end
-		local now = tick()
-		local cooldownSec = (cfg.FireCooldown or 50) / 1000
-		if now - lastAutoFireTime < cooldownSec then return end
-		local doFire = false
-		if cfg.AlwaysFire then
-			doFire = true
-		else
-			local aimPos = getSilentAimTargetPos() or getLockedTargetPos()
-			if aimPos then
-				local myRoot = char and char:FindFirstChild("HumanoidRootPart")
-				local myPos = myRoot and myRoot.Position or (camera and camera.CFrame.Position)
-				local dist = (aimPos - myPos).Magnitude
-				local maxDist = (cfg.FireDistance or 200) == 1000 and 9e9 or (cfg.FireDistance or 200)
-				if dist <= maxDist then doFire = true end
-			end
-		end
-		if doFire then
-			lastAutoFireTime = now
-			pcall(function() tool:Activate() end)
-		end
-	end)
-end
-initAutoFire()
 
 -- cleanup
 track(player.CharacterRemoving, function()
